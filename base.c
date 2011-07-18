@@ -837,7 +837,7 @@ bool rtl_action_proc(struct ieee80211_hw *hw, struct sk_buff *skb, u8 is_tx)
 						rx_status.freq = hw->conf.channel->center_freq;
 						rx_status.band = hw->conf.channel->band;
 						rx_status.flag |= RX_FLAG_DECRYPTED;
-						rx_status.flag |= RX_FLAG_TSFT;
+						rx_status.flag |= RX_FLAG_MACTIME_MPDU;
 						rx_status.rate_idx = 0;
 						rx_status.signal = 50 + 10;
 						memcpy(IEEE80211_SKB_RXCB(skb_delba), &rx_status,
