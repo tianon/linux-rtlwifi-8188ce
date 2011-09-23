@@ -60,4 +60,6 @@ extern u32 rtl92de_read_dword_dbi(struct ieee80211_hw *hw, u16 offset,
 void rtl92de_suspend(struct ieee80211_hw *hw);
 void rtl92de_resume(struct ieee80211_hw *hw);
 void rtl92d_linked_set_reg(struct ieee80211_hw *hw);
+void rtl92de_allow_all_destaddr(struct ieee80211_hw *hw,
+	bool allow_all_da, bool write_into_reg);
 #endif

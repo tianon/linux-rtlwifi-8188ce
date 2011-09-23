@@ -527,9 +527,10 @@
 #define	IMR_OCPINT					BIT(1)
 #define	IMR_WLANOFF					BIT(0)
 
-#define	HWSET_MAX_SIZE						128
+#define	HWSET_MAX_SIZE				128
 #define EFUSE_MAX_SECTION			16
-#define EFUSE_REAL_CONTENT_LEN		512
+#define EFUSE_REAL_CONTENT_LEN			512
+#define EFUSE_OOB_PROTECT_BYTES			15
 
 #define	EEPROM_DEFAULT_TSSI					0x0
 #define EEPROM_DEFAULT_TXPOWERDIFF			0x0
@@ -878,6 +879,7 @@
 #define BD_MAC2						BIT(9)
 #define BD_MAC1						BIT(10)
 #define IC_MACPHY_MODE				BIT(11)
+#define VENDOR_ID					BIT(19)
 #define PAD_HWPD_IDN				BIT(22)
 #define TRP_VAUX_EN					BIT(23)
 #define TRP_BT_EN					BIT(24)

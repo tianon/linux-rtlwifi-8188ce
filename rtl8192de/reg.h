@@ -565,7 +565,8 @@
 /* ----------------------------------------------------- */
 #define	HWSET_MAX_SIZE				256
 #define EFUSE_MAX_SECTION			32
-#define EFUSE_REAL_CONTENT_LEN		512
+#define EFUSE_REAL_CONTENT_LEN			1024
+#define EFUSE_OOB_PROTECT_BYTES			18
 
 /* ----------------------------------------------------- */
 /*     8192C EEPROM/EFUSE share register definition. */

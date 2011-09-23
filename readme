@@ -4,7 +4,8 @@ Realtek Linux mac80211 based driver:
 	RTL8188CE/RTL8192CE
 	RTL8191SE/RTL8192SE
 	RTL8192DE
-  --This driver supports follwing Linux OS:
+
+   --This driver supports follwing Linux OS:
  	Fedora Core
 	Debian
 	Mandriva
@@ -14,33 +15,16 @@ Realtek Linux mac80211 based driver:
 	android 2.2 (froyo-x86), etc.
 
    --This driver supports follwing kernel versions:
-	kernel version >= 2.6.35 
+	1) kernel version >=2.6.35
+	   you can build & install drvier use II. 
 
-   --how to support old kernel like 2.6.24-2.6.34
-	We don't support kernel 2.6.24-2.6.34 directly, Because there are
-	lots of issues in mac80211 from kernel 2.6.24-2.6.34 and some functions
-	may not be included, So we suggest you to use the latest kernel >= 2.6.35.
-	
-	but if you want to use it in old kernel	you can use compat-wireless.
 
-	compat-wireless is a compat version of mac80211 driver,
-	it have fixed lots of issues of mac80211 in the old kerneli,
-	and maybe some new functions have been included into it,
-	and it can be build from kernel 2.6.24 to the latest kernel.
+	2) kernel version [2.6.24, 2.6.34]
+	   you can build & install drvier use III. 
 
-	To support RTL819X in you old kernel, you can build and install 
-	compat-wireless with this driver in you old kernel (2.6.24-2.6.34),
-	and all wireless moudles will be re-installed by compat-wireless
-	include mac80211&cfg80211&nl80211, and then you can have the same
-	wireless modules which have been used in the latest kernel.
 
-	You can get more information from http://wireless.kernel.org/en/users/Download/stable
-	for how to build compat-wireless with our driver.
-
-	you can also download the latest compat-wireless from:
-	http://wireless.kernel.org/en/users/Download/stable
 ========================================================================================
-				I. Component 
+		I. Component 
 ========================================================================================
 The driver is composed of several parts:
 	1. Firmare to make nic work
@@ -55,27 +39,69 @@ The driver is composed of several parts:
 	3. Script to build the modules
 	   3.1 Makefile 
 
+	4. compat-wireless
+	   4.1 compat-wireless*.tar.bz2
+	   4.2 compat
+
 ========================================================================================
-				II. Compile & Installation & uninstall
+		II. Compile & Installation & uninstall
 ========================================================================================
 You can enter top-level directory of driver and execute follwing command to
 Compile, Installation, or uninstall the driver:
 
-    1. Change to Super User
+	1. Change to Super User
 	   sudo su
 
 	2. Compile driver from the source code 
 	   make
 
 	3. Install the driver to the kernel
-       make install
-       reboot
+	   make install
+	   reboot
 
 	4. uninstall driver
 	   make uninstall
 
 ========================================================================================
-				III. Start Up Wireless
+		III. Compile & Installation & uninstall [2.6.24, 2.6.34]
+========================================================================================
+We don't support kernel 2.6.24-2.6.34 directly, Because there are
+lots of issues in mac80211 from kernel 2.6.24-2.6.34,
+So we suggest you to use the latest kernel >= 2.6.35.
+
+but if you want to use our driver in an old kernel,
+you can use compat-wireless. this methord can support all kernel
+versions higher than 2.6.24, and you can use all functions
+of our driver like you use it in the latest kernel version.
+
+You can get more informations of compat-wireless from:
+http://wireless.kernel.org/en/users/Download/stable
+
+you should use the following commands to Compile, Installation, or uninstall the driver:
+
+	1. Change to Super User
+	   sudo su
+
+	2. install compat-wireless driver
+	   ./compat/script/compat-install.sh
+		 
+	3. reboot
+	   reboot
+
+	4. uninstall driver
+	   ./compat/script/compat-uninstall.sh
+
+	5. you can get more information form follwing webset for how to use compat-wireless:
+	   http://wireless.kernel.org/en/users/Download/stable
+	   
+NOTICE:
+	1. Maybe you can not use other vendors wireless after you install compat wireless,
+	   in this situation, you can uninstall compat-wireless use step 4 to recover it.
+
+	2. This install methord can support all versions of kernel, not just 2.6.24-2.6.34,
+	   you can also use it in the kernel higher than 2.6.35.
+========================================================================================
+				IV. Start Up Wireless
 ========================================================================================
 You can use two methord to start up wireless:
 
@@ -95,7 +121,7 @@ You can use two methord to start up wireless:
 		 driver automatically. 
 
 ========================================================================================
-				IV. Wireless UI & NetworkManager 
+				V. Wireless UI & NetworkManager 
 ========================================================================================
 	1. All latest distributions have UI & NetworkManager to like with AP.
 	   And it's more easy to link with AP than commandline,
@@ -112,7 +138,7 @@ You can use two methord to start up wireless:
 	4. Follwing commandlines(V-VII) are all used under Linux without UI. 
 
 ========================================================================================
-				V. Set wireless lan MIBs  
+				VI. Set wireless lan MIBs  
 ========================================================================================
 This driver uses Wireless Extension as an interface allowing you to set
 Wireless LAN specific parameters.
@@ -170,7 +196,7 @@ Wireless LAN specific parameters.
 	        index 2-4 is not supportted by NetworkManager.
 
 ========================================================================================
-				VI. Getting IP address (For OS without UI) 
+				VII. Getting IP address (For OS without UI) 
 ========================================================================================
 Before transmit/receive data, you should obtain an IP address use one of
 the follwing method: 
@@ -185,7 +211,7 @@ the follwing method:
 		
 
 ========================================================================================
-				VII. WPAPSK/WPA2PSK (For OS without UI) 
+				VIII. WPAPSK/WPA2PSK (For OS without UI) 
 ========================================================================================
 Wpa_supplicant helps you to link with WPA/WPA2(include WPA Enterprise) AP, 
 in Linux with NetworkManger & UI, UI will help you to link with AP, 

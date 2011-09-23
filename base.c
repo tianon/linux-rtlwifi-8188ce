@@ -207,7 +207,7 @@ static void _rtl_init_hw_ht_capab(struct ieee80211_hw *hw,
 	 *highest supported RX rate
 	 */
 	if (rtlpriv->dm.supp_phymode_switch) {
-		RT_TRACE(rtlpriv, COMP_INIT, DBG_EMERG, ("Support phy mode switch\n"));
+		RT_TRACE(COMP_INIT, DBG_EMERG, ("Support phy mode switch\n"));
 
 		ht_cap->mcs.rx_mask[0] = 0xFF;
 		ht_cap->mcs.rx_mask[1] = 0xFF;
@@ -218,7 +218,7 @@ static void _rtl_init_hw_ht_capab(struct ieee80211_hw *hw,
 		if (get_rf_type(rtlphy) == RF_1T2R ||
 				get_rf_type(rtlphy) == RF_2T2R) {
 
-			RT_TRACE(rtlpriv, COMP_INIT, DBG_DMESG, ("1T2R or 2T2R\n"));
+			RT_TRACE(COMP_INIT, DBG_DMESG, ("1T2R or 2T2R\n"));
 
 			ht_cap->mcs.rx_mask[0] = 0xFF;
 			ht_cap->mcs.rx_mask[1] = 0xFF;
@@ -227,7 +227,7 @@ static void _rtl_init_hw_ht_capab(struct ieee80211_hw *hw,
 			ht_cap->mcs.rx_highest = MAX_BIT_RATE_40MHZ_MCS15;
 		} else if (get_rf_type(rtlphy) == RF_1T1R) {
 
-			RT_TRACE(rtlpriv, COMP_INIT, DBG_DMESG, ("1T1R\n"));
+			RT_TRACE(COMP_INIT, DBG_DMESG, ("1T1R\n"));
 
 			ht_cap->mcs.rx_mask[0] = 0xFF;
 			ht_cap->mcs.rx_mask[1] = 0x00;
@@ -307,7 +307,7 @@ static void _rtl_init_mac80211(struct ieee80211_hw *hw)
 			/* <4> set mac->sband to wiphy->sband */
 			hw->wiphy->bands[IEEE80211_BAND_5GHZ] = sband;
 		} else {
-			RT_TRACE(rtlpriv, COMP_INIT, DBG_EMERG, ("Err BAND %d\n",
+			RT_TRACE(COMP_INIT, DBG_EMERG, ("Err BAND %d\n",
 					rtlhal->current_bandtype));
 		}
 	}
@@ -316,7 +316,9 @@ static void _rtl_init_mac80211(struct ieee80211_hw *hw)
 	    IEEE80211_HW_RX_INCLUDES_FCS |
 	    IEEE80211_HW_BEACON_FILTER |
 	    IEEE80211_HW_AMPDU_AGGREGATION |
-	    IEEE80211_HW_REPORTS_TX_ACK_STATUS | 
+	    IEEE80211_HW_REPORTS_TX_ACK_STATUS |
+	    IEEE80211_HW_CONNECTION_MONITOR |
+	    /* IEEE80211_HW_SUPPORTS_CQM_RSSI | */
 	    IEEE80211_HW_MFP_CAPABLE | 0;
 
 	/* swlps or hwlps has been set in diff chip in init_sw_vars */
@@ -449,12 +451,12 @@ int rtl_init_core(struct ieee80211_hw *hw)
 	 * mac80211 hw  in _rtl_init_mac80211.
 	 */
 	if (rtl_regd_init(hw, rtl_reg_notifier)) {
-		RT_TRACE(rtlpriv, COMP_ERR, DBG_EMERG, ("REGD init failed\n"));
+		RT_TRACE(COMP_ERR, DBG_EMERG, ("REGD init failed\n"));
 		return 1;
 	} else {
 		/* CRDA regd hint must after init CRDA */
 		if (regulatory_hint(hw->wiphy, rtlpriv->regd.alpha2)) {
-			RT_TRACE(rtlpriv, COMP_ERR, DBG_WARNING,
+			RT_TRACE(COMP_ERR, DBG_WARNING,
 				 ("regulatory_hint fail\n"));
 		}
 	}
@@ -710,7 +712,7 @@ void rtl_get_tcb_desc(struct ieee80211_hw *hw,
 		 *So tcb_desc->hw_rate is just used for
 		 *special data and mgt frames
 		 */
-		if (info->control.rates[0].idx == 0 &&
+		if (info->control.rates[0].idx == 0 ||
 				ieee80211_is_nullfunc(fc)) {
 			tcb_desc->use_driver_rate = true;
 			tcb_desc->ratr_index = RATR_INX_WIRELESS_MC;
@@ -770,7 +772,7 @@ bool rtl_tx_mgmt_proc(struct ieee80211_hw *hw, struct sk_buff *skb)
 			rtlpriv->cfg->ops->check_switch_to_dmdp(hw);
 	}
 	if (ieee80211_is_auth(fc)) {
-		RT_TRACE(rtlpriv, COMP_SEND, DBG_DMESG, ("MAC80211_LINKING\n"));
+		RT_TRACE(COMP_SEND, DBG_DMESG, ("MAC80211_LINKING\n"));
 		rtl_ips_nic_on(hw);
 
 		mac->link_state = MAC80211_LINKING;
@@ -804,10 +806,10 @@ bool rtl_action_proc(struct ieee80211_hw *hw, struct sk_buff *skb, u8 is_tx)
 			if (mac->act_scanning)
 				return false;
 
-			RT_TRACE(rtlpriv, (COMP_SEND | COMP_RECV), DBG_DMESG,
-				 ("%s ACT_ADDBAREQ From :" MAC_FMT "\n",
-				  is_tx ? "Tx" : "Rx", MAC_ARG(hdr->addr2)));
-			RT_PRINT_DATA(rtlpriv, COMP_INIT, DBG_EMERG, ("req \n"),
+			RT_TRACE((COMP_SEND | COMP_RECV), DBG_DMESG,
+				 ("%s ACT_ADDBAREQ From :%pM\n",
+				  is_tx ? "Tx" : "Rx", hdr->addr2));
+			RT_PRINT_DATA(rtlpriv, COMP_INIT, DBG_DMESG, ("req \n"),
 		      	skb->data, skb->len);
 			if (!is_tx) {
 				struct ieee80211_sta *sta = NULL;
@@ -819,7 +821,7 @@ bool rtl_action_proc(struct ieee80211_hw *hw, struct sk_buff *skb, u8 is_tx)
 				struct ieee80211_rx_status rx_status = { 0 };
 				sta = rtl_find_sta(hw, hdr->addr3);
 				if (sta == NULL) {
-					RT_TRACE(rtlpriv, (COMP_SEND | COMP_RECV), DBG_EMERG,
+					RT_TRACE((COMP_SEND | COMP_RECV), DBG_EMERG,
 							("sta is NULL\n"));
 					return true;
 				}
@@ -842,7 +844,7 @@ bool rtl_action_proc(struct ieee80211_hw *hw, struct sk_buff *skb, u8 is_tx)
 						rx_status.signal = 50 + 10;
 						memcpy(IEEE80211_SKB_RXCB(skb_delba), &rx_status,
 								sizeof(rx_status));
-						RT_PRINT_DATA(rtlpriv, COMP_INIT, DBG_EMERG, 
+						RT_PRINT_DATA(rtlpriv, COMP_INIT, DBG_DMESG,
 								("fake del\n"), skb_delba->data,
 								skb_delba->len);
 						ieee80211_rx_irqsafe(hw, skb_delba);
@@ -851,14 +853,13 @@ bool rtl_action_proc(struct ieee80211_hw *hw, struct sk_buff *skb, u8 is_tx)
 			}
 			break;
 		case ACT_ADDBARSP:
-			RT_TRACE(rtlpriv, (COMP_SEND | COMP_RECV), DBG_DMESG,
-				 ("%s ACT_ADDBARSP From :" MAC_FMT "\n",
-				  is_tx ? "Tx" : "Rx", MAC_ARG(hdr->addr2)));
+			RT_TRACE((COMP_SEND | COMP_RECV), DBG_DMESG,
+				 ("%s ACT_ADDBARSP From :%pM\n",
+				  is_tx ? "Tx" : "Rx", hdr->addr2));
 			break;
 		case ACT_DELBA:
-			RT_TRACE(rtlpriv, (COMP_SEND | COMP_RECV), DBG_DMESG,
-				 ("ACT_ADDBADEL From :" MAC_FMT "\n",
-				  MAC_ARG(hdr->addr2)));
+			RT_TRACE((COMP_SEND | COMP_RECV), DBG_DMESG,
+				 ("ACT_ADDBADEL From :%pM\n", hdr->addr2));
 			break;
 		}
 		break;
@@ -900,7 +901,7 @@ u8 rtl_is_special_data(struct ieee80211_hw *hw, struct sk_buff *skb, u8 is_tx)
 				 * 68 : UDP BOOTP client
 				 * 67 : UDP BOOTP server
 				 */
-				RT_TRACE(rtlpriv, (COMP_SEND | COMP_RECV),
+				RT_TRACE((COMP_SEND | COMP_RECV),
 					 DBG_DMESG, ("dhcp %s !!\n",
 						     (is_tx) ? "Tx" : "Rx"));
 
@@ -921,7 +922,7 @@ u8 rtl_is_special_data(struct ieee80211_hw *hw, struct sk_buff *skb, u8 is_tx)
 
 		return true;
 	} else if (ETH_P_PAE == ether_type) {
-		RT_TRACE(rtlpriv, (COMP_SEND | COMP_RECV), DBG_DMESG,
+		RT_TRACE((COMP_SEND | COMP_RECV), DBG_DMESG,
 			 ("802.1X %s EAPOL pkt!!\n", (is_tx) ? "Tx" : "Rx"));
 
 		if (is_tx) {
@@ -948,7 +949,6 @@ int rtl_tx_agg_start(struct ieee80211_hw *hw,
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_tid_data *tid_data;
-	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
 	struct rtl_sta_info *sta_entry = NULL;
 
 	if (sta == NULL)
@@ -962,8 +962,9 @@ int rtl_tx_agg_start(struct ieee80211_hw *hw,
 		return -ENXIO;
 	tid_data = &sta_entry->tids[tid];
 
-	RT_TRACE(rtlpriv, COMP_SEND, DBG_DMESG,
-		 ("on ra = %pM tid = %d seq:%d\n", sta->addr, tid, tid_data->seq_number));
+	RT_TRACE(COMP_SEND, DBG_DMESG,
+		 ("on ra = %pM tid = %d seq:%d\n", sta->addr, tid,
+		  tid_data->seq_number));
 
 	*ssn = tid_data->seq_number;
 	tid_data->agg.agg_state = RTL_AGG_START;
@@ -971,7 +972,7 @@ int rtl_tx_agg_start(struct ieee80211_hw *hw,
 /*<delete in kernel start>*/
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
 /*<delete in kernel end>*/
-	ieee80211_start_tx_ba_cb_irqsafe(mac->vif, sta->addr, tid);
+	ieee80211_start_tx_ba_cb_irqsafe(rtlpriv->mac80211.vif, sta->addr, tid);
 /*<delete in kernel start>*/
 #else
 	ieee80211_start_tx_ba_cb_irqsafe(hw, sta->addr, tid);
@@ -985,7 +986,6 @@ int rtl_tx_agg_stop(struct ieee80211_hw *hw,
 		struct ieee80211_sta *sta, u16 tid)
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
-	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
 	struct rtl_tid_data *tid_data;
 	struct rtl_sta_info *sta_entry = NULL;
 
@@ -993,11 +993,11 @@ int rtl_tx_agg_stop(struct ieee80211_hw *hw,
 		return -EINVAL;
 
 	if (!sta->addr) {
-		RT_TRACE(rtlpriv, COMP_ERR, DBG_EMERG, ("ra = NULL\n"));
+		RT_TRACE(COMP_ERR, DBG_EMERG, ("ra = NULL\n"));
 		return -EINVAL;
 	}
 
-	RT_TRACE(rtlpriv, COMP_SEND, DBG_DMESG,
+	RT_TRACE(COMP_SEND, DBG_DMESG,
 		 ("on ra = %pM tid = %d\n", sta->addr, tid));
 
 	if (unlikely(tid >= MAX_TID_COUNT))
@@ -1010,7 +1010,7 @@ int rtl_tx_agg_stop(struct ieee80211_hw *hw,
 /*<delete in kernel start>*/
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
 /*<delete in kernel end>*/
-	ieee80211_stop_tx_ba_cb_irqsafe(mac->vif, sta->addr, tid);
+	ieee80211_stop_tx_ba_cb_irqsafe(rtlpriv->mac80211.vif, sta->addr, tid);
 /*<delete in kernel start>*/
 #else
 	ieee80211_stop_tx_ba_cb_irqsafe(hw, sta->addr, tid);
@@ -1038,7 +1038,7 @@ int rtl_rx_agg_start(struct ieee80211_hw *hw,
 		return -ENXIO;
 	tid_data = &sta_entry->tids[tid];
 
-	RT_TRACE(rtlpriv, COMP_RECV, DBG_DMESG,
+	RT_TRACE(COMP_RECV, DBG_DMESG,
 		 ("on ra = %pM tid = %d seq:%d\n", sta->addr, tid,
 		 tid_data->seq_number));
 
@@ -1057,11 +1057,11 @@ int rtl_rx_agg_stop(struct ieee80211_hw *hw,
 		return -EINVAL;
 
 	if (!sta->addr) {
-		RT_TRACE(rtlpriv, COMP_ERR, DBG_EMERG, ("ra = NULL\n"));
+		RT_TRACE(COMP_ERR, DBG_EMERG, ("ra = NULL\n"));
 		return -EINVAL;
 	}
 
-	RT_TRACE(rtlpriv, COMP_SEND, DBG_DMESG,
+	RT_TRACE(COMP_SEND, DBG_DMESG,
 		 ("on ra = %pM tid = %d\n", sta->addr, tid));
 
 	if (unlikely(tid >= MAX_TID_COUNT))
@@ -1084,11 +1084,11 @@ int rtl_tx_agg_oper(struct ieee80211_hw *hw,
 		return -EINVAL;
 
 	if (!sta->addr) {
-		RT_TRACE(rtlpriv, COMP_ERR, DBG_EMERG, ("ra = NULL\n"));
+		RT_TRACE(COMP_ERR, DBG_EMERG, ("ra = NULL\n"));
 		return -EINVAL;
 	}
 
-	RT_TRACE(rtlpriv, COMP_SEND, DBG_DMESG,
+	RT_TRACE(COMP_SEND, DBG_DMESG,
 		 ("on ra = %pM tid = %d\n", sta->addr, tid));
 
 	if (unlikely(tid >= MAX_TID_COUNT))
@@ -1106,6 +1106,34 @@ int rtl_tx_agg_oper(struct ieee80211_hw *hw,
  * wq & timer callback functions
  *
  *********************************************************/
+/* this function is used for roaming */
+void rtl_beacon_statistic(struct ieee80211_hw *hw, struct sk_buff *skb)
+{
+	struct rtl_priv *rtlpriv = rtl_priv(hw);
+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
+
+	if (rtlpriv->mac80211.opmode != NL80211_IFTYPE_STATION)
+		return;
+
+	if (rtlpriv->mac80211.link_state < MAC80211_LINKED)
+		return;
+
+	/* check if this really is a beacon */
+	if (!ieee80211_is_beacon(hdr->frame_control) &&
+		!ieee80211_is_probe_resp(hdr->frame_control))
+		return;
+
+	/* min. beacon length + FCS_LEN */
+	if (skb->len <= 40 + FCS_LEN)
+		return;
+
+	/* and only beacons from the associated BSSID, please */
+	if (compare_ether_addr(hdr->addr3, rtlpriv->mac80211.bssid))
+		return;
+
+	rtlpriv->link_info.bcn_rx_inperiod ++;
+}
+	
 void rtl_watchdog_wq_callback(void *data)
 {
 	struct rtl_works *rtlworks = container_of_dwork_rtl(data,
@@ -1138,10 +1166,8 @@ void rtl_watchdog_wq_callback(void *data)
 		mac->cnt_after_linked = 0;
 	}
 
-	/*
-	 *<3> to check if traffic busy, if
-	 * busytraffic we don't change channel
-	 */
+	/* <2> to check if traffic busy, if
+	 * busytraffic we don't change channel */
 	if (mac->link_state >= MAC80211_LINKED) {
 
 		/* (1) get aver_rx_cnt_inperiod & aver_tx_cnt_inperiod */
@@ -1221,6 +1247,22 @@ void rtl_watchdog_wq_callback(void *data)
 
 	/* <3> DM */
 	rtlpriv->cfg->ops->dm_watchdog(hw);
+
+	/* <4> roaming */
+	if (mac->link_state >= MAC80211_LINKED) {
+		if ((rtlpriv->link_info.bcn_rx_inperiod +
+			rtlpriv->link_info.num_rx_inperiod) == 0) {
+			if (mac->opmode == NL80211_IFTYPE_STATION) {
+				RT_TRACE(COMP_ERR, DBG_EMERG,
+					("AP off, try to reconnect now\n"));
+				ieee80211_connection_loss(rtlpriv->mac80211.vif);
+			}
+		} else {
+			rtlpriv->link_info.bcn_rx_inperiod = 0;
+		}
+	} else {
+		rtlpriv->link_info.bcn_rx_inperiod = 0;
+	}
 }
 
 void rtl_watch_dog_timer_callback(unsigned long data)
@@ -1276,7 +1318,7 @@ struct sk_buff *rtl_make_smps_action(struct ieee80211_hw *hw,
 {
 	struct rtl_efuse *rtlefuse = rtl_efuse(rtl_priv(hw));
 	struct sk_buff *skb;
-	struct ieee80211_mgmt *action_frame;
+	struct ieee80211_mgmt_compat *action_frame;
 
 	/* 27 = header + category + action + smps mode */
 	skb = dev_alloc_skb(27 + hw->extra_tx_headroom);
@@ -1369,7 +1411,7 @@ EXPORT_SYMBOL(rtl_send_smps_action);
  * so here we just make a fake del_ba if we receive a ba_req
  * but rx_agg was opened to let mac80211 release some ba
  * related resources, so please this del_ba for tx */
-struct sk_buff *rtl_make_del_ba(struct ieee80211_hw *hw, 
+struct sk_buff *rtl_make_del_ba(struct ieee80211_hw *hw,
 		u8 *sa, u8 *bssid, u16 tid)
 {
 	struct rtl_efuse *rtlefuse = rtl_efuse(rtl_priv(hw));
@@ -1396,7 +1438,7 @@ struct sk_buff *rtl_make_del_ba(struct ieee80211_hw *hw,
 	params |= (u16)(tid << 12); 		/* bit 15:12 TID number */
 
 	action_frame->u.action.u.delba.params = cpu_to_le16(params);
-	action_frame->u.action.u.delba.reason_code = 
+	action_frame->u.action.u.delba.reason_code =
 		cpu_to_le16(WLAN_REASON_QSTA_TIMEOUT);
 
 	return skb;
@@ -1528,29 +1570,29 @@ void rtl_recognize_peer(struct ieee80211_hw *hw, u8 *data, unsigned int len)
 		(memcmp(mac->bssid, ap5_6, 3) == 0) ||
 		vendor == PEER_ATH) {
 		vendor = PEER_ATH;
-		RT_TRACE(rtlpriv, COMP_MAC80211, DBG_LOUD, ("=>ath find\n"));
+		RT_TRACE(COMP_MAC80211, DBG_LOUD, ("=>ath find\n"));
 	} else if ((memcmp(mac->bssid, ap4_4, 3) == 0) ||
 		(memcmp(mac->bssid, ap4_5, 3) == 0) ||
 		(memcmp(mac->bssid, ap4_1, 3) == 0) ||
 		(memcmp(mac->bssid, ap4_2, 3) == 0) ||
 		(memcmp(mac->bssid, ap4_3, 3) == 0) ||
 		vendor == PEER_RAL) {
-		RT_TRACE(rtlpriv, COMP_MAC80211, DBG_LOUD, ("=>ral findn\n"));
+		RT_TRACE(COMP_MAC80211, DBG_LOUD, ("=>ral findn\n"));
 		vendor = PEER_RAL;
 	} else if (memcmp(mac->bssid, ap6_1, 3) == 0 ||
 		vendor == PEER_CISCO) {
 		vendor = PEER_CISCO;
-		RT_TRACE(rtlpriv, COMP_MAC80211, DBG_LOUD, ("=>cisco find\n"));
+		RT_TRACE(COMP_MAC80211, DBG_LOUD, ("=>cisco find\n"));
 	} else if ((memcmp(mac->bssid, ap3_1, 3) == 0) ||
 		(memcmp(mac->bssid, ap3_2, 3) == 0) ||
 		(memcmp(mac->bssid, ap3_3, 3) == 0) ||
 		vendor == PEER_BROAD) {
-		RT_TRACE(rtlpriv, COMP_MAC80211, DBG_LOUD, ("=>broad find\n"));
+		RT_TRACE(COMP_MAC80211, DBG_LOUD, ("=>broad find\n"));
 		vendor = PEER_BROAD;
 	} else if (memcmp(mac->bssid, ap7_1, 3) == 0 ||
 		vendor == PEER_MARV) {
 		vendor = PEER_MARV;
-		RT_TRACE(rtlpriv, COMP_MAC80211, DBG_LOUD, ("=>marv find\n"));
+		RT_TRACE(COMP_MAC80211, DBG_LOUD, ("=>marv find\n"));
 	}
 
 	mac->vendor = vendor;

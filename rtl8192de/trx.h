@@ -511,11 +511,11 @@ do {								\
 		memset(__pdesc, 0, _size);			\
 } while (0);
 
-#define RX_HAL_IS_CCK_RATE(_pdesc)\
-	(_pdesc->rxmcs == DESC92D_RATE1M ||\
-	 _pdesc->rxmcs == DESC92D_RATE2M ||\
-	 _pdesc->rxmcs == DESC92D_RATE5_5M ||\
-	 _pdesc->rxmcs == DESC92D_RATE11M)
+#define RX_HAL_IS_CCK_RATE(rxmcs)\
+	(rxmcs == DESC92D_RATE1M ||\
+	 rxmcs == DESC92D_RATE2M ||\
+	 rxmcs == DESC92D_RATE5_5M ||\
+	 rxmcs == DESC92D_RATE11M)
 
 /* For 92D early mode */
 #define SET_EARLYMODE_PKTNUM(__paddr, __value) 	\

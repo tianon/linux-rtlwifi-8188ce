@@ -173,7 +173,7 @@ enum dbgp_flag_e {
 		} \
 	} while(0);
 
-#define RT_TRACE(rtlpriv, comp, level, fmt)\
+#define RT_TRACE(comp, level, fmt)\
 	do { \
 		if(unlikely(((comp) & rtlpriv->dbg.global_debugcomponents) && \
 			((level) <= rtlpriv->dbg.global_debuglevel))) {\
@@ -212,11 +212,6 @@ enum dbgp_flag_e {
 			printk(KERN_DEBUG "\n");			\
 		} \
 	} while(0);
-
-#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
-#define MAC_ARG(x) \
-	((u8*)(x))[0],((u8*)(x))[1],((u8*)(x))[2],\
-	((u8*)(x))[3],((u8*)(x))[4],((u8*)(x))[5]
 
 void rtl_dbgp_flag_init(struct ieee80211_hw *hw);
 void rtl_proc_add_one(struct ieee80211_hw *hw);

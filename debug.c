@@ -601,7 +601,7 @@ void rtl_proc_add_one(struct ieee80211_hw *hw)
 	rtlpriv->dbg.proc_dir = create_proc_entry(rtlpriv->dbg.proc_name,
 		S_IFDIR | S_IRUGO | S_IXUGO, proc_topdir);
 	if (!rtlpriv->dbg.proc_dir) {
-		RT_TRACE(rtlpriv, COMP_INIT, DBG_EMERG, ("Unable to init "
+		RT_TRACE(COMP_INIT, DBG_EMERG, ("Unable to init "
 			"/proc/net/%s/%s\n", rtlpriv->cfg->name,
 			rtlpriv->dbg.proc_name));
 		return;
@@ -610,147 +610,147 @@ void rtl_proc_add_one(struct ieee80211_hw *hw)
 	entry = create_proc_read_entry("mac-0", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_mac_0, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, DBG_EMERG, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, DBG_EMERG, ("Unable to initialize "
 		      "/proc/net/%s/%s/mac-0\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("mac-1", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_mac_1, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/mac-1\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("mac-2", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_mac_2, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/mac-2\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("mac-3", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_mac_3, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/mac-3\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("mac-4", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_mac_4, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/mac-4\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("mac-5", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_mac_5, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/mac-5\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("mac-6", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_mac_6, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/mac-6\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("mac-7", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_mac_7, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/mac-7\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("bb-8", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_bb_8, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/bb-8\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("bb-9", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_bb_9, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/bb-9\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("bb-a", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_bb_a, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/bb-a\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("bb-b", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_bb_b, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/bb-b\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("bb-c", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_bb_c, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/bb-c\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("bb-d", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_bb_d, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/bb-d\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("bb-e", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_bb_e, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/bb-e\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("bb-f", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_bb_f, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/bb-f\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("rf-a", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_reg_rf_a, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/rf-a\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("rf-b", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_reg_rf_b, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/rf-b\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("cam-1", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_cam_register_1, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/cam-1\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("cam-2", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_cam_register_2, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/cam-2\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 
 	entry = create_proc_read_entry("cam-3", S_IFREG | S_IRUGO,
 				   rtlpriv->dbg.proc_dir, rtl_proc_get_cam_register_3, hw);
 	if (!entry)
-		RT_TRACE(rtlpriv, COMP_INIT, COMP_ERR, ("Unable to initialize "
+		RT_TRACE(COMP_INIT, COMP_ERR, ("Unable to initialize "
 		      "/proc/net/%s/%s/cam-3\n",
 		      rtlpriv->cfg->name, rtlpriv->dbg.proc_name));
 }

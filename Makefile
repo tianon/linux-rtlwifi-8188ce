@@ -34,6 +34,8 @@ all:
 install: all
 	find /lib/modules/$(shell uname -r) -name "r8192se_*.ko" -exec rm {} \;
 	find /lib/modules/$(shell uname -r) -name "r8192ce_*.ko" -exec rm {} \;
+	@rm -fr $(FIRMWAREDIR)/`uname -r`/rtlwifi
+
 	$(shell rm -fr $(MODDESTDIR))
 	$(shell mkdir $(MODDESTDIR))
 	$(shell mkdir $(MODDESTDIR)/rtl8192se)
@@ -48,8 +50,9 @@ install: all
 	@depmod -a
 
 	@#copy firmware img to target fold
-	$(shell [ -d "$(FIRMWAREDIR)/`uname -r`" ] && cp -fr firmware/rtlwifi/ $(FIRMWAREDIR)/`uname -r`/.)
-	$(shell [ ! -d "$(FIRMWAREDIR)/`uname -r`" ] && cp -fr firmware/rtlwifi/ $(FIRMWAREDIR)/.)
+	@#$(shell [ -d "$(FIRMWAREDIR)/`uname -r`" ] && cp -fr firmware/rtlwifi/ $(FIRMWAREDIR)/`uname -r`/.)
+	@#$(shell [ ! -d "$(FIRMWAREDIR)/`uname -r`" ] && cp -fr firmware/rtlwifi/ $(FIRMWAREDIR)/.)
+	@cp -fr firmware/rtlwifi/ $(FIRMWAREDIR)/
 
 uninstall:
 	$(shell [ -d "$(MODDESTDIR)" ] && rm -fr $(MODDESTDIR))

@@ -58,3 +58,15 @@ Change history =
 	5. fix crash issue on some platform.
 	6. fix crash issue caused by LPS ps-poll and null tx desc wrong.
 	7. fix ralink ap TP issue caused by DELBA.
+
+Release date = 2011-08-16
+Operating system release = Ubuntu 11.04
+Kernel version = 2.6.35-3.0
+Release driver version = 0004.0816.2011
+Change history =
+	1. add 92DE C-cut D-cut support.
+	2. add 92CE UMC version support.
+	3. Fix 92CE VID/DID issue.
+	4. Fix MeGoo crash issue.
+	5. Add compat wireless to support lower version kernel.
+	6. add connection monitor function.

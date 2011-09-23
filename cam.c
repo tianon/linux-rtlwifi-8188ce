@@ -51,7 +51,7 @@ static void rtl_cam_program_entry(struct ieee80211_hw *hw, u32 entry_no,
 	u32 target_content = 0;
 	u8 entry_i;
 
-	RT_TRACE(rtlpriv, COMP_SEC, DBG_LOUD,
+	RT_TRACE(COMP_SEC, DBG_LOUD,
 		 ("key_cont_128:\n %x:%x:%x:%x:%x:%x\n",
 		  key_cont_128[0], key_cont_128[1],
 		  key_cont_128[2], key_cont_128[3],
@@ -70,12 +70,12 @@ static void rtl_cam_program_entry(struct ieee80211_hw *hw, u32 entry_no,
 			rtl_write_dword(rtlpriv, rtlpriv->cfg->maps[RWCAM],
 					target_command);
 
-			RT_TRACE(rtlpriv, COMP_SEC, DBG_LOUD,
+			RT_TRACE(COMP_SEC, DBG_LOUD,
 				 ("WRITE %x: %x \n",
 				  rtlpriv->cfg->maps[WCAMI], target_content));
-			RT_TRACE(rtlpriv, COMP_SEC, DBG_LOUD,
+			RT_TRACE(COMP_SEC, DBG_LOUD,
 				 ("The Key ID is %d\n", entry_no));
-			RT_TRACE(rtlpriv, COMP_SEC, DBG_LOUD,
+			RT_TRACE(COMP_SEC, DBG_LOUD,
 				 ("WRITE %x: %x \n",
 				  rtlpriv->cfg->maps[RWCAM], target_command));
 
@@ -91,9 +91,9 @@ static void rtl_cam_program_entry(struct ieee80211_hw *hw, u32 entry_no,
 			rtl_write_dword(rtlpriv, rtlpriv->cfg->maps[RWCAM],
 					target_command);
 
-			RT_TRACE(rtlpriv, COMP_SEC, DBG_LOUD,
+			RT_TRACE(COMP_SEC, DBG_LOUD,
 				 ("WRITE A4: %x \n", target_content));
-			RT_TRACE(rtlpriv, COMP_SEC, DBG_LOUD,
+			RT_TRACE(COMP_SEC, DBG_LOUD,
 				 ("WRITE A0: %x \n", target_command));
 
 		} else {
@@ -111,14 +111,14 @@ static void rtl_cam_program_entry(struct ieee80211_hw *hw, u32 entry_no,
 					target_command);
 			udelay(100);
 
-			RT_TRACE(rtlpriv, COMP_SEC, DBG_LOUD,
+			RT_TRACE(COMP_SEC, DBG_LOUD,
 				 ("WRITE A4: %x \n", target_content));
-			RT_TRACE(rtlpriv, COMP_SEC, DBG_LOUD,
+			RT_TRACE(COMP_SEC, DBG_LOUD,
 				 ("WRITE A0: %x \n", target_command));
 		}
 	}
 
-	RT_TRACE(rtlpriv, COMP_SEC, DBG_LOUD,
+	RT_TRACE(COMP_SEC, DBG_LOUD,
 		 ("after set key, usconfig:%x\n", us_config));
 }
 
@@ -129,14 +129,14 @@ u8 rtl_cam_add_one_entry(struct ieee80211_hw *hw, u8 *mac_addr,
 	u32 us_config;
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 
-	RT_TRACE(rtlpriv, COMP_SEC, DBG_DMESG,
+	RT_TRACE(COMP_SEC, DBG_DMESG,
 		 ("EntryNo:%x, ulKeyId=%x, ulEncAlg=%x, "
-		  "ulUseDK=%x MacAddr" MAC_FMT "\n",
+		  "ulUseDK=%x MacAddr %pM\n",
 		  ul_entry_idx, ul_key_id, ul_enc_alg,
-		  ul_default_key, MAC_ARG(mac_addr)));
+		  ul_default_key, mac_addr));
 
 	if (ul_key_id == TOTAL_CAM_ENTRY) {
-		RT_TRACE(rtlpriv, COMP_ERR, DBG_WARNING,
+		RT_TRACE(COMP_ERR, DBG_WARNING,
 			 ("<=== ulKeyId exceed!\n"));
 		return 0;
 	}
@@ -150,7 +150,7 @@ u8 rtl_cam_add_one_entry(struct ieee80211_hw *hw, u8 *mac_addr,
 	rtl_cam_program_entry(hw, ul_entry_idx, mac_addr,
 			      (u8 *) key_content, us_config);
 
-	RT_TRACE(rtlpriv, COMP_SEC, DBG_DMESG, ("<===\n"));
+	RT_TRACE(COMP_SEC, DBG_DMESG, ("<===\n"));
 
 	return 1;
 
@@ -163,7 +163,7 @@ int rtl_cam_delete_one_entry(struct ieee80211_hw *hw,
 	u32 ul_command;
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 
-	RT_TRACE(rtlpriv, COMP_SEC, DBG_DMESG, ("key_idx:%d\n", ul_key_id));
+	RT_TRACE(COMP_SEC, DBG_DMESG, ("key_idx:%d\n", ul_key_id));
 
 	ul_command = ul_key_id * CAM_CONTENT_COUNT;
 	ul_command = ul_command | BIT(31) | BIT(16);
@@ -171,9 +171,9 @@ int rtl_cam_delete_one_entry(struct ieee80211_hw *hw,
 	rtl_write_dword(rtlpriv, rtlpriv->cfg->maps[WCAMI], 0);
 	rtl_write_dword(rtlpriv, rtlpriv->cfg->maps[RWCAM], ul_command);
 
-	RT_TRACE(rtlpriv, COMP_SEC, DBG_DMESG,
+	RT_TRACE(COMP_SEC, DBG_DMESG,
 		 ("rtl_cam_delete_one_entry(): WRITE A4: %x \n", 0));
-	RT_TRACE(rtlpriv, COMP_SEC, DBG_DMESG,
+	RT_TRACE(COMP_SEC, DBG_DMESG,
 		 ("rtl_cam_delete_one_entry(): WRITE A0: %x \n", ul_command));
 
 	return 0;
@@ -225,9 +225,9 @@ void rtl_cam_mark_invalid(struct ieee80211_hw *hw, u8 uc_index)
 	rtl_write_dword(rtlpriv, rtlpriv->cfg->maps[WCAMI], ul_content);
 	rtl_write_dword(rtlpriv, rtlpriv->cfg->maps[RWCAM], ul_command);
 
-	RT_TRACE(rtlpriv, COMP_SEC, DBG_DMESG,
+	RT_TRACE(COMP_SEC, DBG_DMESG,
 		 ("rtl_cam_mark_invalid(): WRITE A4: %x \n", ul_content));
-	RT_TRACE(rtlpriv, COMP_SEC, DBG_DMESG,
+	RT_TRACE(COMP_SEC, DBG_DMESG,
 		 ("rtl_cam_mark_invalid(): WRITE A0: %x \n", ul_command));
 }
 EXPORT_SYMBOL(rtl_cam_mark_invalid);
@@ -275,10 +275,10 @@ void rtl_cam_empty_entry(struct ieee80211_hw *hw, u8 uc_index)
 		rtl_write_dword(rtlpriv, rtlpriv->cfg->maps[WCAMI], ul_content);
 		rtl_write_dword(rtlpriv, rtlpriv->cfg->maps[RWCAM], ul_command);
 
-		RT_TRACE(rtlpriv, COMP_SEC, DBG_LOUD,
+		RT_TRACE(COMP_SEC, DBG_LOUD,
 			 ("rtl_cam_empty_entry(): WRITE A4: %x \n",
 			  ul_content));
-		RT_TRACE(rtlpriv, COMP_SEC, DBG_LOUD,
+		RT_TRACE(COMP_SEC, DBG_LOUD,
 			 ("rtl_cam_empty_entry(): WRITE A0: %x \n",
 			  ul_command));
 	}
@@ -294,7 +294,7 @@ u8 rtl_cam_get_free_entry(struct ieee80211_hw *hw, u8 *sta_addr)
 	u8 i, *addr;            
 
 	if (NULL == sta_addr) {
-		RT_TRACE(rtlpriv, COMP_SEC, DBG_EMERG,
+		RT_TRACE(COMP_SEC, DBG_EMERG,
 			("sta_addr is NULL.\n"));
 		return TOTAL_CAM_ENTRY;
 	}               
@@ -307,7 +307,7 @@ u8 rtl_cam_get_free_entry(struct ieee80211_hw *hw, u8 *sta_addr)
 	/* Get a free CAM entry. */
 	for (entry_idx = 4; entry_idx < TOTAL_CAM_ENTRY; entry_idx++) {
 		if ((bitmap & BIT(0)) == 0) {
-			RT_TRACE(rtlpriv, COMP_SEC, DBG_EMERG,
+			RT_TRACE(COMP_SEC, DBG_EMERG,
 				("-----hwsec_cam_bitmap: 0x%x entry_idx=%d\n",
 				 rtlpriv->sec.hwsec_cam_bitmap, entry_idx));
 			rtlpriv->sec.hwsec_cam_bitmap |= BIT(0) << entry_idx;
@@ -327,13 +327,13 @@ void rtl_cam_del_entry(struct ieee80211_hw *hw, u8 *sta_addr)
 	u8 i, *addr;
 
 	if (NULL == sta_addr) {
-		RT_TRACE(rtlpriv, COMP_SEC, DBG_EMERG,
+		RT_TRACE(COMP_SEC, DBG_EMERG,
 			("sta_addr is NULL.\n"));
 	}
 
 	if ((sta_addr[0]|sta_addr[1]|sta_addr[2]|sta_addr[3]|\
 				sta_addr[4]|sta_addr[5]) == 0) {
-		RT_TRACE(rtlpriv, COMP_SEC, DBG_EMERG,
+		RT_TRACE(COMP_SEC, DBG_EMERG,
 			("sta_addr is 00:00:00:00:00:00.\n"));
 		return;
 	}

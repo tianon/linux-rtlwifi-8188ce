@@ -40,7 +40,7 @@
 #define EFUSE_IC_ID_OFFSET		506
 */
 
-#define EFUSE_MAX_WORD_UNIT		4
+#define EFUSE_MAX_WORD_UNIT		4	
 
 #define EFUSE_INIT_MAP			0
 #define EFUSE_MODIFY_MAP		1

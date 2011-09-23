@@ -30,6 +30,8 @@
 #ifndef __RTL_BASE_H__
 #define __RTL_BASE_H__
 
+#include "compat.h"
+
 enum ap_peer {
 	PEER_UNKNOWN = 0,
 	PEER_RTL = 1,
@@ -120,6 +122,7 @@ bool rtl_action_proc(struct ieee80211_hw *hw, struct sk_buff *skb, u8 is_tx);
 bool rtl_tx_mgmt_proc(struct ieee80211_hw *hw, struct sk_buff *skb);
 u8 rtl_is_special_data(struct ieee80211_hw *hw, struct sk_buff *skb, u8 is_tx);
 
+void rtl_beacon_statistic(struct ieee80211_hw *hw, struct sk_buff *skb);
 void rtl_watch_dog_timer_callback(unsigned long data);
 int rtl_tx_agg_start(struct ieee80211_hw *hw, struct ieee80211_sta *sta,
 		     u16 tid, u16 * ssn);

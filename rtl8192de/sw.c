@@ -163,7 +163,7 @@ int rtl92d_init_sw_vars(struct ieee80211_hw *hw)
 	/* for firmware buf */
 	rtlpriv->rtlhal.pfirmware = (u8 *) vmalloc(0x8000);
 	if (!rtlpriv->rtlhal.pfirmware) {
-		RT_TRACE(rtlpriv, COMP_ERR, DBG_EMERG,
+		RT_TRACE(COMP_ERR, DBG_EMERG,
 			 ("Can't alloc buffer for fw.\n"));
 		return 1;
 	}
@@ -172,12 +172,12 @@ int rtl92d_init_sw_vars(struct ieee80211_hw *hw)
 	err = request_firmware(&firmware, rtlpriv->cfg->fw_name,
 			       rtlpriv->io.dev);
 	if (err) {
-		RT_TRACE(rtlpriv, COMP_ERR, DBG_EMERG,
+		RT_TRACE(COMP_ERR, DBG_EMERG,
 			 ("Failed to request firmware!\n"));
 		return 1;
 	}
 	if (firmware->size > 0x8000) {
-		RT_TRACE(rtlpriv, COMP_ERR, DBG_EMERG,
+		RT_TRACE(COMP_ERR, DBG_EMERG,
 			 ("Firmware is too big!\n"));
 		release_firmware(firmware);
 		return 1;
@@ -248,6 +248,7 @@ struct rtl_hal_ops rtl8192de_hal_ops = {
 	.get_rfreg = rtl92d_phy_query_rf_reg,
 	.set_rfreg = rtl92d_phy_set_rf_reg,
 	.linked_set_reg = rtl92d_linked_set_reg,
+	.allow_all_destaddr = rtl92de_allow_all_destaddr,
 	.check_switch_to_dmdp = rtl92d_easy_concurrent_switch_to_dmdp,
 	.dualmac_easy_concurrent = rtl_dualmac_easyconcurrent,
 	.dualmac_switch_to_dmdp = rtl92d_dm_easy_concurrent_switch_to_dmdp,
@@ -288,6 +289,7 @@ struct rtl_hal_cfg rtl92de_hal_cfg = {
 	.maps[EFUSE_HWSET_MAX_SIZE] = HWSET_MAX_SIZE,
 	.maps[EFUSE_MAX_SECTION_MAP] = EFUSE_MAX_SECTION,
 	.maps[EFUSE_REAL_CONTENT_SIZE] = EFUSE_REAL_CONTENT_LEN,
+	.maps[EFUSE_OOB_PROTECT_BYTES_LEN] = EFUSE_OOB_PROTECT_BYTES,
 
 	.maps[RWCAM] = REG_CAMCMD,
 	.maps[WCAMI] = REG_CAMWRITE,

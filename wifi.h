@@ -377,6 +377,7 @@ enum rtl_var_map {
 	EFUSE_HWSET_MAX_SIZE,
 	EFUSE_MAX_SECTION_MAP,
 	EFUSE_REAL_CONTENT_SIZE,
+	EFUSE_OOB_PROTECT_BYTES_LEN,
 
 	/*CAM map */
 	RWCAM,
@@ -1172,7 +1173,6 @@ struct rtl_efuse {
 
 struct rtl_ps_ctl {
 	bool pwrdomain_protect;
-	bool set_rfpowerstate_inprogress;
 	bool b_in_powersavemode;
 	bool rfchange_inprogress;
 	bool b_swrf_processing;
@@ -1235,7 +1235,7 @@ struct rtl_stats {
 	s8 rssi;
 	u8 signal;
 	u8 noise;
-	u16 rate;		/*in 100 kbps */
+	u8 rate;		/* hw desc rate */
 	u8 received_channel;
 	u8 control;
 	u8 mask;
@@ -1273,12 +1273,16 @@ struct rtl_stats {
 	s8 rx_mimo_signalquality[2];
 	bool b_packet_matchbssid;
 	bool b_is_cck;
+	bool b_is_ht;
 	bool b_packet_toself;
 	bool b_packet_beacon;	/*for rssi */
 	char cck_adc_pwdb[4];	/*for rx path selection */
 };
 
 struct rt_link_detect {
+	/* count for raoming */
+	u32 bcn_rx_inperiod;
+	
 	u32 num_tx_in4period[4];
 	u32 num_rx_in4period[4];
 
@@ -1325,6 +1329,19 @@ struct rtl_tcb_desc {
 	u8 empkt_num;
 	/* The max value by HW */
 	u32 empkt_len[5];
+
+	/* used for hal construct pkt,
+	 * we may set desc when tx */
+	u8 self_desc;
+};
+
+struct proxim {
+	bool proxim_on;
+
+	void *proximity_priv;
+	int (*proxim_rx)(struct ieee80211_hw *hw, struct rtl_stats *stats,
+		struct sk_buff *skb);
+	u8  (*proxim_get_var)(struct ieee80211_hw *hw, u8 type);
 };
 
 struct rtl_hal_ops {
@@ -1390,6 +1407,8 @@ struct rtl_hal_ops {
 			  u32 regaddr, u32 bitmask);
 	void (*set_rfreg) (struct ieee80211_hw * hw, enum radio_path rfpath,
 			   u32 regaddr, u32 bitmask, u32 data);
+	void (*allow_all_destaddr)(struct ieee80211_hw *hw,
+		bool allow_all_da, bool write_into_reg);
 	void (*linked_set_reg) (struct ieee80211_hw * hw);
 	void (*check_switch_to_dmdp) (struct ieee80211_hw * hw);
 	void (*dualmac_easy_concurrent) (struct ieee80211_hw *hw);
@@ -1571,6 +1590,11 @@ struct rtl_priv {
 	   and was used to indicate status of
 	   interface or hardware */
 	unsigned long status;
+
+	/* intel Proximity, should be alloc mem
+	 * in intel Proximity module and can only 
+	 * be used in intel Proximity mode */
+	struct proxim proximity;
 
 	/*This must be the last item so
 	   that it points to the data allocated
@@ -1964,11 +1988,10 @@ static inline u16 rtl_get_tid(struct sk_buff *skb)
 static inline struct ieee80211_sta *rtl_find_sta(struct ieee80211_hw *hw,
 		u8 *mac_addr)
 {
-	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
-
 /*<delete in kernel start>*/
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
 /*<delete in kernel end>*/
+	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
 	return ieee80211_find_sta(mac->vif, mac_addr);
 /*<delete in kernel start>*/
 #else
@@ -1977,4 +2000,5 @@ static inline struct ieee80211_sta *rtl_find_sta(struct ieee80211_hw *hw,
 /*<delete in kernel end>*/
 }
 
+struct ieee80211_hw *rtl_pci_get_hw_pointer(void);
 #endif
