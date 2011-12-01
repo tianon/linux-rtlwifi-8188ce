@@ -1,4 +1,5 @@
 .base.o.cmd
+.base.o.d
 .cam.o.cmd
 .core.o.cmd
 .debug.o.cmd
