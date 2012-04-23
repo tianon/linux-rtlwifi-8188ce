@@ -1248,15 +1248,17 @@ static void _rtl92s_phy_set_fwcmd_io(struct ieee80211_hw *hw)
 
 	/* We re-map RA related CMD IO to combinational ones */
 	/* if FW version is v.52 or later. */
-	switch (rtlhal->current_fwcmd_io) {
-	case FW_CMD_RA_REFRESH_N:
-		rtlhal->current_fwcmd_io = FW_CMD_RA_REFRESH_N_COMB;
-		break;
-	case FW_CMD_RA_REFRESH_BG:
-		rtlhal->current_fwcmd_io = FW_CMD_RA_REFRESH_BG_COMB;
-		break;
-	default:
-		break;
+	if (hal_get_firmwareverison(rtlpriv) >= 0x34) {
+		switch (rtlhal->current_fwcmd_io) {
+		case FW_CMD_RA_REFRESH_N:
+			rtlhal->current_fwcmd_io = FW_CMD_RA_REFRESH_N_COMB;
+			break;
+		case FW_CMD_RA_REFRESH_BG:
+			rtlhal->current_fwcmd_io = FW_CMD_RA_REFRESH_BG_COMB;
+			break;
+		default:
+			break;
+		}
 	}
 
 	switch (rtlhal->current_fwcmd_io) {
@@ -1381,19 +1383,28 @@ bool rtl92s_phy_set_fw_cmd(struct ieee80211_hw *hw, enum fwcmd_iotype fw_cmdio)
 			fw_cmdio, rtlhal->set_fwcmd_inprogress));
 
 	do {
-		/* We re-map to combined FW CMD ones if firmware version */
-		/* is v.53 or later. */
-		switch (fw_cmdio) {
-			case FW_CMD_RA_REFRESH_N:
-				fw_cmdio = FW_CMD_RA_REFRESH_N_COMB;
+		if (hal_get_firmwareverison(rtlpriv) >= 0x35) {
+			/* We re-map to combined FW CMD ones if firmware version */
+			/* is v.53 or later. */
+			switch (fw_cmdio) {
+				case FW_CMD_RA_REFRESH_N:
+					fw_cmdio = FW_CMD_RA_REFRESH_N_COMB;
+					break;
+				case FW_CMD_RA_REFRESH_BG:
+					fw_cmdio = FW_CMD_RA_REFRESH_BG_COMB;
+					break;
+				default:
+					break;
+			}
+		} else {
+			if((fw_cmdio == FW_CMD_IQK_ENABLE) ||
+				(fw_cmdio == FW_CMD_RA_REFRESH_N) ||
+				(fw_cmdio == FW_CMD_RA_REFRESH_BG)) {
+				bPostProcessing = true;
 				break;
-			case FW_CMD_RA_REFRESH_BG:
-				fw_cmdio = FW_CMD_RA_REFRESH_BG_COMB;
-				break;
-			default:
-				break;
+			}
 		}
-
+		
 		/* If firmware version is v.62 or later,
 		 * use FW_CMD_IO_SET for FW_CMD_CTRL_DM_BY_DRIVER */
 		if (hal_get_firmwareverison(rtlpriv) >= 0x3E) {
@@ -1623,5 +1634,14 @@ void rtl92s_phy_switch_ephy_parameter(struct ieee80211_hw *hw)
 void rtl92s_phy_set_beacon_hwreg(struct ieee80211_hw *hw, u16 BeaconInterval)
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
-	rtl_write_dword(rtlpriv, WFM5, 0xF1000000 | (BeaconInterval << 8));
+	u32 new_bcn_num = 0;
+
+	if (hal_get_firmwareverison(rtlpriv) >= 0x33) {
+		/* Fw v.51 and later. */
+		rtl_write_dword(rtlpriv, WFM5, 0xF1000000 | (BeaconInterval << 8));
+	} else {
+		new_bcn_num = BeaconInterval * 32 - 64;
+		rtl_write_dword(rtlpriv, WFM3 + 4, new_bcn_num);
+		rtl_write_dword(rtlpriv, WFM3, 0xB026007C);
+	}
 }

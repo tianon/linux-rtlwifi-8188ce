@@ -26,9 +26,11 @@
  * Larry Finger <Larry.Finger@lwfinger.net>
  *
  *****************************************************************************/
-
 #include "wifi.h"
 #include "cam.h"
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+#include <linux/export.h>
+#endif
 
 void rtl_cam_reset_sec_info(struct ieee80211_hw *hw)
 {
@@ -51,11 +53,8 @@ static void rtl_cam_program_entry(struct ieee80211_hw *hw, u32 entry_no,
 	u32 target_content = 0;
 	u8 entry_i;
 
-	RT_TRACE(COMP_SEC, DBG_LOUD,
-		 ("key_cont_128:\n %x:%x:%x:%x:%x:%x\n",
-		  key_cont_128[0], key_cont_128[1],
-		  key_cont_128[2], key_cont_128[3],
-		  key_cont_128[4], key_cont_128[5]));
+	RT_PRINT_DATA(rtlpriv, COMP_SEC, DBG_DMESG, "Key content :",
+			key_cont_128, 16);
 
 	for (entry_i = 0; entry_i < CAM_CONTENT_COUNT; entry_i++) {
 		target_command = entry_i + CAM_CONTENT_COUNT * entry_no;

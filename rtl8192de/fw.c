@@ -254,10 +254,11 @@ int rtl92d_download_fw(struct ieee80211_hw *hw)
 	pfwdata = (u8 *) rtlhal->pfirmware;
 	rtlhal->fw_version = (u16) GET_FIRMWARE_HDR_VERSION(pfwheader);
 	rtlhal->fw_subversion = (u16) GET_FIRMWARE_HDR_SUB_VER(pfwheader);
-	RT_TRACE(COMP_INIT, DBG_LOUD, (" FirmwareVersion(%d),"
+	RT_TRACE(COMP_INIT, DBG_DMESG, (" FirmwareVersion(%d),"
 			"FirmwareSubVersion(%d), Signature(%#x)\n",
 			rtlhal->fw_version,	rtlhal->fw_subversion,
 			GET_FIRMWARE_HDR_SIGNATURE(pfwheader)));
+	
 	if (IS_FW_HEADER_EXIST(pfwheader)) {
 		RT_TRACE(COMP_INIT, DBG_LOUD,
 			 ("Shift 32 bytes for FW header!!\n"));

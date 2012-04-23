@@ -364,10 +364,10 @@ int rtl92s_download_fw(struct ieee80211_hw *hw)
 	pfirmware->firmwareversion =  byte(pfwheader->version ,0);
 	pfirmware->pfwheader->fwpriv.hci_sel = 1;/* pcie */
 
-	RT_TRACE(COMP_INIT, DBG_LOUD, ("signature:%x, version:%x, size:%x,"
+	RT_TRACE(COMP_INIT, DBG_DMESG, ("signature:%x, version:%x, size:%x,"
 			"imemsize:%x, sram size:%x\n", pfwheader->signature,
-			pfwheader->version, pfwheader->dmem_size,pfwheader->img_imem_size,
-			pfwheader->img_sram_size));
+			pfirmware->firmwareversion, pfwheader->dmem_size,
+			pfwheader->img_imem_size, pfwheader->img_sram_size));
 
 	/* 2. Retrieve IMEM image. */
 	if ((pfwheader->img_imem_size == 0) || (pfwheader->img_imem_size >

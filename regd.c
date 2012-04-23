@@ -378,19 +378,9 @@ static int _rtl_regd_init_wiphy(struct rtl_regulatory *reg,
 
 	wiphy->reg_notifier = reg_notifier;
 
-/*<delete in kernel start>*/
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-/*<delete in kernel end>*/
 	wiphy->flags |= WIPHY_FLAG_CUSTOM_REGULATORY;
 	wiphy->flags &= ~WIPHY_FLAG_STRICT_REGULATORY;
 	wiphy->flags &= ~WIPHY_FLAG_DISABLE_BEACON_HINTS;
-/*<delete in kernel start>*/
-#else
-	wiphy->custom_regulatory = true;
-	wiphy->strict_regulatory = false;
-	wiphy->disable_beacon_hints = false;
-#endif
-/*<delete in kernel end>*/
 
 	regd = _rtl_regdomain_select(reg);
 	wiphy_apply_custom_regulatory(wiphy, regd);

@@ -36,7 +36,7 @@
 #define MAX_RFDEPENDCMD_CNT 		16
 #define MAX_POSTCMD_CNT 			16
 
-#define RF90_PATH_MAX				4
+#define RF6052_MAX_PATH				2
 
 enum version_8192s{
 	VERSION_8192S_ACUT,

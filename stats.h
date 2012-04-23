@@ -27,17 +27,20 @@
  *
  *****************************************************************************/
 
-#ifndef __RTL92C_RF_H__
-#define __RTL92C_RF_H__
+#ifndef __RTL_STATS_H__
+#define __RTL_STATS_H__
 
-#define RF6052_MAX_TX_PWR		0x3F
-#define RF6052_MAX_REG			0x3F
+#define	PHY_RSSI_SLID_WIN_MAX				100
+#define	PHY_LINKQUALITY_SLID_WIN_MAX		20
+#define	PHY_BEACON_RSSI_SLID_WIN_MAX		10
 
-extern void rtl92c_phy_rf6052_set_bandwidth(struct ieee80211_hw *hw,
-					    u8 bandwidth);
-extern void rtl92c_phy_rf6052_set_cck_txpower(struct ieee80211_hw *hw,
-					      u8 *ppowerlevel);
-extern void rtl92c_phy_rf6052_set_ofdm_txpower(struct ieee80211_hw *hw,
-					       u8 *ppowerlevel, u8 channel);
-extern bool rtl92c_phy_rf6052_config(struct ieee80211_hw *hw);
+/* Rx smooth factor */
+#define	RX_SMOOTH_FACTOR					20
+
+u8 rtl_query_rxpwrpercentage(char antpower);
+u8 rtl_evm_db_to_percentage(char value);
+long rtl_signal_scale_mapping(struct ieee80211_hw *hw, long currsig);
+void rtl_process_phyinfo(struct ieee80211_hw *hw, u8 *buffer,
+	struct rtl_stats *pstatus);
+
 #endif

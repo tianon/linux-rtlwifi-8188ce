@@ -327,7 +327,9 @@ case $1 in
 		disable_var_02
 		;;
 	rtlwifi)
-		select_drivers		CONFIG_RTL8192CE CONFIG_RTL8192DE CONFIG_RTL8192SE CONFIG_RTLWIFI
+		select_drivers		CONFIG_RTL8192CE CONFIG_RTL8192DE \
+					CONFIG_RTL8192SE \
+					CONFIG_RTLWIFI
 		disable_staging
 		disable_bt_usb_ethernet_var
 		;;

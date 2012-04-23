@@ -149,6 +149,7 @@ static void _rtl92s_dm_txpowertracking_callback_thermalmeter(
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_efuse *rtlefuse = rtl_efuse(rtl_priv(hw));
 	u8 thermalvalue = 0;
+	u32 fw_cmd = 0;
 
 	rtlpriv->dm.btxpower_trackinginit = true;
 
@@ -161,7 +162,20 @@ static void _rtl92s_dm_txpowertracking_callback_thermalmeter(
 
 	if (thermalvalue) {
 		rtlpriv->dm.thermalvalue = thermalvalue;
-		rtl92s_phy_set_fw_cmd(hw, FW_CMD_TXPWR_TRACK_THERMAL);
+
+		if (hal_get_firmwareverison(rtlpriv)>= 0x35) {
+			rtl92s_phy_set_fw_cmd(hw, FW_CMD_TXPWR_TRACK_THERMAL);
+		} else {
+			fw_cmd = (FW_TXPWR_TRACK_THERMAL |
+				(rtlpriv->efuse.thermalmeter[0] << 8) | 
+				(thermalvalue << 16));
+			
+			RT_TRACE(COMP_POWER_TRACKING, DBG_LOUD,
+				("Write to FW Thermal Val = 0x%x\n", fw_cmd));
+			
+			rtl_write_dword(rtlpriv, WFM5, fw_cmd); 
+			rtl92s_phy_chk_fwcmd_iodone(hw);
+		}
 	}
 
 	rtlpriv->dm.txpowercount = 0;
@@ -215,7 +229,8 @@ static void _rtl92s_dm_refresh_rateadaptive_mask(struct ieee80211_hw *hw)
 	if (!rtlpriv->dm.b_useramask)
 		return;
 
-	if (!rtlpriv->dm.binform_fw_driverctrldm) {
+	if (hal_get_firmwareverison(rtlpriv) >= 61 &&
+		!rtlpriv->dm.binform_fw_driverctrldm) {
 		rtl92s_phy_set_fw_cmd(hw, FW_CMD_CTRL_DM_BY_DRIVER);
 		rtlpriv->dm.binform_fw_driverctrldm = true;
 	}
@@ -358,7 +373,8 @@ static void _rtl92s_dm_init_rate_adaptive_mask(struct ieee80211_hw *hw)
 	p_ra->ratr_state = DM_RATR_STA_MAX;
 	p_ra->pre_ratr_state = DM_RATR_STA_MAX;
 
-	if (rtlpriv->dm.dm_type == DM_TYPE_BYDRIVER)
+	if (rtlpriv->dm.dm_type == DM_TYPE_BYDRIVER &&
+		hal_get_firmwareverison(rtlpriv) >= 60)
 		rtlpriv->dm.b_useramask = true;
 	else
 		rtlpriv->dm.b_useramask = false;
@@ -660,11 +676,12 @@ static void _rtl92s_dm_init_dynamic_txpower(struct ieee80211_hw *hw)
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 
-	if ((hal_get_firmwareverison(rtlpriv) >= 60) &&
-		(rtlpriv->dm.dm_type == DM_TYPE_BYDRIVER))
+	if (hal_get_firmwareverison(rtlpriv) >= 60 &&
+		rtlpriv->dm.dm_type == DM_TYPE_BYDRIVER) {
 		rtlpriv->dm.bdynamic_txpower_enable = true;
-	else
+	} else {
 		rtlpriv->dm.bdynamic_txpower_enable = false;
+	}
 
 	rtlpriv->dm.last_dtp_lvl = TX_HIGHPWR_LEVEL_NORMAL;
 	rtlpriv->dm.dynamic_txhighpower_lvl = TX_HIGHPWR_LEVEL_NORMAL;

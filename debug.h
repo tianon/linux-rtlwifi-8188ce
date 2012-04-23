@@ -107,6 +107,7 @@
 #define COMP_REGD			BIT(27)
 #define COMP_CHAN			BIT(28)
 #define COMP_EASY_CONCURRENT 		BIT(29)
+#define COMP_BT_COEXIST			BIT(30)
 
 /*--------------------------------------------------------------
 		Define the rt_print components

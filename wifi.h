@@ -30,6 +30,7 @@
 #ifndef __RTL_WIFI_H__
 #define __RTL_WIFI_H__
 
+#include <linux/interrupt.h>
 #include <linux/sched.h>
 #include <linux/firmware.h>
 #include <linux/version.h>
@@ -100,6 +101,9 @@
 /* for early mode */
 #define EM_HDR_LEN				8
 #define FCS_LEN				4
+
+#define MAX_VIRTUAL_MAC			1
+
 enum intf_type {
 	INTF_PCI = 0,
 	INTF_USB = 1,
@@ -131,6 +135,7 @@ enum hardware_type {
 	HARDWARE_TYPE_RTL8192CU,
 	HARDWARE_TYPE_RTL8192DE,
 	HARDWARE_TYPE_RTL8192DU,
+	HARDWARE_TYPE_RTL8723AE,
 
 	/* keep it last */
 	HARDWARE_TYPE_NUM
@@ -307,6 +312,11 @@ enum rt_oem_id {
 	RT_CID_819x_WNC_COREGA = 31,
 	RT_CID_819x_Foxcoon = 32,
 	RT_CID_819x_DELL = 33,
+	RT_CID_819x_PRONETS = 34,
+	RT_CID_819x_Edimax_ASUS = 35,
+	RT_CID_NETGEAR = 36,
+	RT_CID_PLANEX = 37,
+	RT_CID_CC_C = 38,
 };
 
 enum hw_descs {
@@ -571,6 +581,10 @@ enum ba_action {
 	ACT_DELBA = 2,
 };
 
+enum rt_polarity_ctl {
+	RT_POLARITY_LOW_ACT = 0,
+	RT_POLARITY_HIGH_ACT = 1,	
+};
 struct octet_string {
 	u8 *octet;
 	u16 length;
@@ -659,7 +673,40 @@ struct rtl_sta_info {
 
 	/* just used for ap adhoc or mesh*/
 	struct rssi_sta rssi_stat;
-} __packed;;
+} __packed;
+
+#ifdef VIF_TODO
+struct rtl_vif {
+	unsigned int id;
+	/* struct ieee80211_vif __rcu *vif; */
+	struct ieee80211_vif *vif;
+};
+
+struct rtl_vif_info {
+	struct list_head list;
+	bool active;
+	unsigned int id;
+	struct sk_buff *beacon;
+	bool enable_beacon;
+};
+
+struct vif_priv {
+	struct list_head vif_list;
+
+	/* interface mode settings */
+	unsigned long vif_bitmap;
+	unsigned int vifs;
+	struct rtl_vif vif[MAX_VIRTUAL_MAC];
+
+	/* beaconing */
+	spinlock_t beacon_lock;
+	unsigned int global_pretbtt;
+	unsigned int global_beacon_int;
+	/* struct rtl_vif_info __rcu *beacon_iter; */
+	struct rtl_vif_info *beacon_iter;
+	unsigned int beacon_enabled;
+};
+#endif
 
 struct false_alarm_statistics {
 	u32 cnt_parity_fail;
@@ -823,6 +870,8 @@ struct rtl_phy {
 
 	u8 num_total_rfpath;
 	u16 rf_pathmap;
+	
+	enum rt_polarity_ctl polarity_ctl;
 };
 
 #define RTL_AGG_STOP 						0
@@ -1231,6 +1280,7 @@ struct rtl_ps_ctl {
 };
 
 struct rtl_stats {
+	u8 psaddr[ETH_ALEN];
 	u32 mac_time[2];
 	s8 rssi;
 	u8 signal;
@@ -1282,6 +1332,7 @@ struct rtl_stats {
 struct rt_link_detect {
 	/* count for raoming */
 	u32 bcn_rx_inperiod;
+	u32 roam_times;
 	
 	u32 num_tx_in4period[4];
 	u32 num_rx_in4period[4];
@@ -1290,6 +1341,8 @@ struct rt_link_detect {
 	u32 num_rx_inperiod;
 
 	bool b_busytraffic;
+	bool b_tx_busy_traffic;
+	bool b_rx_busy_traffic;
 	bool b_higher_busytraffic;
 	bool b_higher_busyrxtraffic;
 
@@ -1339,7 +1392,7 @@ struct proxim {
 	bool proxim_on;
 
 	void *proximity_priv;
-	int (*proxim_rx)(struct ieee80211_hw *hw, struct rtl_stats *stats,
+	int (*proxim_rx)(struct ieee80211_hw *hw, struct rtl_stats *status,
 		struct sk_buff *skb);
 	u8  (*proxim_get_var)(struct ieee80211_hw *hw, u8 type);
 };
@@ -1381,7 +1434,7 @@ struct rtl_hal_ops {
 				 bool b_firstseg, bool b_lastseg,
 				 struct sk_buff * skb);
 	 bool(*query_rx_desc) (struct ieee80211_hw * hw,
-			       struct rtl_stats * stats,
+			       struct rtl_stats * status,
 			       struct ieee80211_rx_status * rx_status,
 			       u8 * pdesc, struct sk_buff * skb);
 	void (*set_channel_access) (struct ieee80211_hw * hw);
@@ -1550,6 +1603,9 @@ struct rtl_global_var {
 
 struct rtl_priv {
 	struct list_head list;
+#ifdef VIF_TODO
+	struct vif_priv vif_priv;
+#endif
 	struct rtl_priv *buddy_priv;
 	struct rtl_global_var *glb_var;
 	struct rtl_dualmac_easy_concurrent_ctl easy_concurrent_ctl;
@@ -1626,6 +1682,7 @@ enum bt_co_type {
         BT_CSR_BC4 = 3,
         BT_CSR_BC8 = 4,
         BT_RTL8756 = 5,
+        BT_RTL8723A = 6,
 };
 
 enum bt_cur_state {
@@ -1649,6 +1706,46 @@ enum bt_service_type {
 enum bt_radio_shared {
         BT_RADIO_SHARED = 0,
         BT_RADIO_INDIVIDUAL = 1,
+};
+struct btdm_8723 {
+	bool b_all_off;
+	bool b_agc_table_en;
+	bool b_adc_back_off_on;
+	bool b2_ant_hid_en;
+	bool b_low_penalty_rate_adaptive;
+	bool b_rf_rx_lpf_shrink;
+	bool b_reject_aggre_pkt;
+	bool b_tdma_on;
+	u8 tdma_ant;
+	u8 tdma_nav;
+	u8 tdma_dac_swing;
+	u8 fw_dac_swing_lvl;
+	bool b_pta_on;
+	u32	val_0x6c0;
+	u32	val_0x6c8;
+	u32	val_0x6cc;
+	bool b_sw_dac_swing_on;
+	u32	sw_dac_swing_lvl;
+	u32	wlan_act_hi;
+	u32	wlan_act_lo;
+	u32	bt_retry_index;
+};
+struct bt_coexist_8723 {
+	u32	high_priority_tx;
+	u32	high_priority_rx;
+	u32	low_priority_tx;
+	u32	low_priority_rx;
+	u32	bt_rssi;
+	struct	btdm_8723	btdm;
+};
+struct bt_traffic_statistics{
+	bool b_tx_busy_traffic;
+	bool b_rx_busy_traffic;
+	bool b_idle;
+	u32	tx_pkt_cnt_in_period;
+	u32	rx_pkt_cnt_in_period;
+	u32	tx_pkt_len_in_period;
+	u32	rx_pkt_len_in_period;
 };
 
 struct bt_coexist_info {
@@ -1684,12 +1781,17 @@ struct bt_coexist_info {
 
         bool b_fw_coexist_all_off;
         bool b_sw_coexist_all_off;
+	bool b_hw_coexist_all_off;
         u32 current_state;
         u32 previous_state;
         u8 bt_pre_rssi_state;
 
         u8 b_reg_bt_iso;
         u8 b_reg_bt_sco;
+	bool b_balance_on;
+	struct bt_coexist_8723 hal_coex_8723;
+	struct bt_traffic_statistics bt21_traffic_statistics;
+	struct bt_traffic_statistics bt30_traffic_statistics;
 
 };
 
@@ -1988,16 +2090,8 @@ static inline u16 rtl_get_tid(struct sk_buff *skb)
 static inline struct ieee80211_sta *rtl_find_sta(struct ieee80211_hw *hw,
 		u8 *mac_addr)
 {
-/*<delete in kernel start>*/
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-/*<delete in kernel end>*/
 	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
 	return ieee80211_find_sta(mac->vif, mac_addr);
-/*<delete in kernel start>*/
-#else
-	return ieee80211_find_sta(hw, mac_addr);
-#endif
-/*<delete in kernel end>*/
 }
 
 struct ieee80211_hw *rtl_pci_get_hw_pointer(void);

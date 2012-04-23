@@ -33,6 +33,9 @@
 #include "base.h"
 #include "ps.h"
 #include "efuse.h"
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+#include <linux/export.h>
+#endif
 
 static const u16 pcibridge_vendors[PCI_BRIDGE_VENDOR_MAX] = {
 	INTEL_VENDOR_ID,
@@ -791,7 +794,7 @@ static void _rtl_pci_rx_interrupt(struct ieee80211_hw *hw)
 	u8 tmp_one;
 	bool unicast = false;
 
-	struct rtl_stats stats = {
+	struct rtl_stats status = {
 		.signal = 0,
 		.noise = -98,
 		.rate = 0,
@@ -816,14 +819,14 @@ static void _rtl_pci_rx_interrupt(struct ieee80211_hw *hw)
 			struct ieee80211_hdr *hdr;
 			u16 fc;
 
-			rtlpriv->cfg->ops->query_rx_desc(hw, &stats,
+			rtlpriv->cfg->ops->query_rx_desc(hw, &status,
 							 &rx_status, (u8 *) pdesc, skb);
 			pci_unmap_single(rtlpci->pdev, *((dma_addr_t *) skb->cb),
 					 rtlpci->rxbuffersize, PCI_DMA_FROMDEVICE);
 
 			skb_put(skb, rtlpriv->cfg->ops->get_desc((u8 *) pdesc,
 								 false,	 HW_DESC_RXPKT_LEN));
-			skb_reserve(skb, stats.rx_drvinfo_size + stats.rx_bufshift);
+			skb_reserve(skb, status.rx_drvinfo_size + status.rx_bufshift);
 
 			/*
 			 *NOTICE This can not be use for mac80211,
@@ -835,7 +838,7 @@ static void _rtl_pci_rx_interrupt(struct ieee80211_hw *hw)
 			hdr = rtl_get_hdr(skb);
 			fc = rtl_get_fc(skb);
 
-			if (!stats.b_crc && !stats.b_hwerror) {
+			if (!status.b_crc && !status.b_hwerror) {
 				memcpy(IEEE80211_SKB_RXCB(skb), &rx_status, sizeof(rx_status));
 
 				if (is_broadcast_ether_addr(hdr->addr1)) {
@@ -1691,6 +1694,11 @@ static bool _rtl_pci_find_adapter(struct pci_dev *pdev,
 			break;
 
 		}
+	}else if(deviceid == RTL_PCI_8723AE_DID) {
+		rtlhal->hw_type = HARDWARE_TYPE_RTL8723AE;
+		RT_TRACE(COMP_INIT, DBG_DMESG,
+			 ("8723AE PCI-E is found - "
+			  "vid/did=%x/%x\n", venderid, deviceid));
 	} else if (deviceid == RTL_PCI_8192CET_DID ||
 		   deviceid == RTL_PCI_8192CE_DID ||
 		   deviceid == RTL_PCI_8191CE_DID ||
@@ -1956,6 +1964,11 @@ int __devinit rtl_pci_probe(struct pci_dev *pdev,
 	} else {
 		rtlpriv->mac80211.mac80211_registered = 1;
 	}
+	/* the wiphy must have been registed to cfg80211 prior to regulatory_hint */
+	if (regulatory_hint(hw->wiphy, rtlpriv->regd.alpha2)) {
+		RT_TRACE(COMP_ERR, DBG_WARNING,
+			 ("regulatory_hint fail\n"));
+	}
 
 	err = sysfs_create_group(&pdev->dev.kobj, &rtl_attribute_group);
 	if (err) {
@@ -2078,38 +2091,28 @@ call rtl_mac_stop() from the mac80211
 suspend function first, So there is
 no need to call hw_disable here.
 ****************************************/
-int rtl_pci_suspend(struct pci_dev *pdev, pm_message_t state)
+int rtl_pci_suspend(struct device *dev)
 {
+	struct pci_dev *pdev = to_pci_dev(dev);
 	struct ieee80211_hw *hw = pci_get_drvdata(pdev);
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 
 	rtlpriv->cfg->ops->hw_suspend(hw);
 	rtl_deinit_rfkill(hw);
 
-	pci_save_state(pdev);
-	pci_disable_device(pdev);
-	pci_set_power_state(pdev, PCI_D3hot);
 	return 0;
 }
 EXPORT_SYMBOL(rtl_pci_suspend);
 
-int rtl_pci_resume(struct pci_dev *pdev)
+int rtl_pci_resume(struct device *dev)
 {
-	int ret;
+	struct pci_dev *pdev = to_pci_dev(dev);
 	struct ieee80211_hw *hw = pci_get_drvdata(pdev);
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 
-	pci_set_power_state(pdev, PCI_D0);
-	ret = pci_enable_device(pdev);
-	if (ret) {
-		RT_ASSERT(false, ("ERR: <======\n"));
-		return ret;
-	}
-
-	pci_restore_state(pdev);
-
 	rtlpriv->cfg->ops->hw_resume(hw);
 	rtl_init_rfkill(hw);
+	
 	return 0;
 }
 EXPORT_SYMBOL(rtl_pci_resume);

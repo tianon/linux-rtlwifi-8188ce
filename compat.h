@@ -1,54 +1,56 @@
 #ifndef __RTL_COMPAT_H__
 #define __RTL_COMPAT_H__
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29))
+/*
+ * Use this if you want to use the same suspend and resume callbacks for suspend
+ * to RAM and hibernation.
+ */
+#define SIMPLE_DEV_PM_OPS(name, suspend_fn, resume_fn) \
+struct dev_pm_ops name = { \
+	.suspend = suspend_fn, \
+	.resume = resume_fn, \
+	.freeze = suspend_fn, \
+	.thaw = resume_fn, \
+	.poweroff = suspend_fn, \
+	.restore = resume_fn, \
+}
+
+#define compat_pci_suspend(fn)						\
+	int fn##_compat(struct pci_dev *pdev, pm_message_t state) 	\
+	{								\
+		int r;							\
+									\
+		r = fn(&pdev->dev);					\
+		if (r)							\
+			return r;					\
+									\
+		pci_save_state(pdev);					\
+		pci_disable_device(pdev);				\
+		pci_set_power_state(pdev, PCI_D3hot);			\
+									\
+		return 0;						\
+	}
+
+#define compat_pci_resume(fn)						\
+	int fn##_compat(struct pci_dev *pdev)				\
+	{								\
+		int r;							\
+									\
+		pci_set_power_state(pdev, PCI_D0);			\
+		r = pci_enable_device(pdev);				\
+		if (r)							\
+			return r;					\
+		pci_restore_state(pdev);				\
+									\
+		return fn(&pdev->dev);					\
+	}
+#endif 
+
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,39))
 #define RX_FLAG_MACTIME_MPDU RX_FLAG_TSFT
 #else
 //#define NETDEV_TX_OK
-#endif
-
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,33))
-/* for SM power control field lower two bits */
-#define WLAN_HT_SMPS_CONTROL_DISABLED	0
-#define WLAN_HT_SMPS_CONTROL_STATIC	1
-#define WLAN_HT_SMPS_CONTROL_DYNAMIC	3
-
-/**
- * enum ieee80211_smps_mode - spatial multiplexing power save mode
- *
- * @IEEE80211_SMPS_AUTOMATIC: automatic
- * @IEEE80211_SMPS_OFF: off
- * @IEEE80211_SMPS_STATIC: static
- * @IEEE80211_SMPS_DYNAMIC: dynamic
- * @IEEE80211_SMPS_NUM_MODES: internal, don't use
- */
-enum ieee80211_smps_mode {
-	IEEE80211_SMPS_AUTOMATIC,
-	IEEE80211_SMPS_OFF,
-	IEEE80211_SMPS_STATIC,
-	IEEE80211_SMPS_DYNAMIC,
-
-	/* keep last */
-	IEEE80211_SMPS_NUM_MODES,
-};
-
-/* HT action codes */
-enum ieee80211_ht_actioncode {
-	WLAN_HT_ACTION_NOTIFY_CHANWIDTH = 0,
-	WLAN_HT_ACTION_SMPS = 1,
-	WLAN_HT_ACTION_PSMP = 2,
-	WLAN_HT_ACTION_PCO_PHASE = 3,
-	WLAN_HT_ACTION_CSI = 4,
-	WLAN_HT_ACTION_NONCOMPRESSED_BF = 5,
-	WLAN_HT_ACTION_COMPRESSED_BF = 6,
-	WLAN_HT_ACTION_ASEL_IDX_FEEDBACK = 7,
-};
-
-static inline int ieee80211_is_qos_nullfunc(__le16 fc)
-{
-	return (fc & cpu_to_le16(IEEE80211_FCTL_FTYPE | IEEE80211_FCTL_STYPE)) ==
-	       cpu_to_le16(IEEE80211_FTYPE_DATA | IEEE80211_STYPE_QOS_NULLFUNC);
-}
 #endif
 
 struct ieee80211_mgmt_compat {

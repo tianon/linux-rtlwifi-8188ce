@@ -30,6 +30,9 @@
 #include "wifi.h"
 #include "base.h"
 #include "ps.h"
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0))
+#include <linux/export.h>
+#endif
 
 bool rtl_ps_enable_nic(struct ieee80211_hw *hw)
 {

@@ -211,11 +211,8 @@ static void rtl_tx_status(void *ppriv,
 					/*<delete in kernel end>*/
 					ieee80211_start_tx_ba_session(sta, tid, 5000);
 					/*<delete in kernel start>*/
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-					ieee80211_start_tx_ba_session(sta, tid);
 #else
-					ieee80211_start_tx_ba_session(mac->hw,
-							hdr->addr1, tid);
+					ieee80211_start_tx_ba_session(sta, tid);
 #endif
 					/*<delete in kernel end>*/
 				}
@@ -230,22 +227,11 @@ static void rtl_rate_init(void *ppriv,
 {
 }
 
-/*<delete in kernel start>*/
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-/*<delete in kernel end>*/
 static void rtl_rate_update(void *ppriv,
 			    struct ieee80211_supported_band *sband,
 			    struct ieee80211_sta *sta, void *priv_sta,
 			    u32 changed,
 			    enum nl80211_channel_type oper_chan_type)
-/*<delete in kernel start>*/
-#else
-static void rtl_rate_update(void *ppriv,
-			    struct ieee80211_supported_band *sband,
-			    struct ieee80211_sta *sta, void *priv_sta,
-			    u32 changed)
-#endif
-/*<delete in kernel end>*/
 {
 }
 

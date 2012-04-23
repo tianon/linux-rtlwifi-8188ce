@@ -895,7 +895,7 @@ void rtl92de_enable_hw_security_config(struct ieee80211_hw *hw)
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	u8 sec_reg_value;
 
-	RT_TRACE(COMP_INIT, DBG_LOUD,
+	RT_TRACE(COMP_INIT, DBG_DMESG,
 		 ("PairwiseEncAlgorithm = %d GroupEncAlgorithm = %d\n",
 		  rtlpriv->sec.pairwise_enc_algorithm,
 		  rtlpriv->sec.group_enc_algorithm));
@@ -910,7 +910,7 @@ void rtl92de_enable_hw_security_config(struct ieee80211_hw *hw)
 	}
 	sec_reg_value |= (SCR_RXBCUSEDK | SCR_TXBCUSEDK);
 	rtl_write_byte(rtlpriv, REG_CR + 1, 0x02);
-	RT_TRACE(COMP_SEC, DBG_LOUD,
+	RT_TRACE(COMP_SEC, DBG_DMESG,
 		 ("The SECR-value %x \n", sec_reg_value));
 	rtlpriv->cfg->ops->set_hw_reg(hw, HW_VAR_WPA_CONFIG, &sec_reg_value);
 
@@ -2371,31 +2371,15 @@ void rtl92de_set_key(struct ieee80211_hw *hw, u32 key_index,
 				rtl_cam_del_entry(hw, p_macaddr);
 			rtl_cam_delete_one_entry(hw, p_macaddr, entry_id);
 		} else {
-			RT_TRACE(COMP_SEC, DBG_LOUD,
-				 ("The insert KEY length is %d\n",
-				  rtlpriv->sec.key_len[PAIRWISE_KEYIDX]));
-			RT_TRACE(COMP_SEC, DBG_LOUD,
-				 ("The insert KEY  is %x %x \n",
-				  rtlpriv->sec.key_buf[0][0],
-				  rtlpriv->sec.key_buf[0][1]));
-			RT_TRACE(COMP_SEC, DBG_DMESG,
-				 ("add one entry\n"));
+			RT_TRACE(COMP_SEC, DBG_DMESG, ("add one entry\n"));
 			if (is_pairwise) {
-				RT_PRINT_DATA(rtlpriv, COMP_SEC, DBG_LOUD,
-					      "Pairwiase Key content :",
-					      rtlpriv->sec.pairwise_key,
-					      rtlpriv->
-					      sec.key_len[PAIRWISE_KEYIDX]);
-				RT_TRACE(COMP_SEC, DBG_DMESG,
-					 ("set Pairwiase key\n"));
+				RT_TRACE(COMP_SEC, DBG_DMESG, ("set Pairwiase key\n"));
 				rtl_cam_add_one_entry(hw, macaddr, key_index,
 						      entry_id, enc_algo,
 						      CAM_CONFIG_NO_USEDK,
-						      rtlpriv->
-						      sec.key_buf[key_index]);
+						      rtlpriv->sec.key_buf[key_index]);
 			} else {
-				RT_TRACE(COMP_SEC, DBG_DMESG,
-					 ("set group key\n"));
+				RT_TRACE(COMP_SEC, DBG_DMESG, ("set group key\n"));
 				if (mac->opmode == NL80211_IFTYPE_ADHOC) {
 					rtl_cam_add_one_entry(hw, rtlefuse->dev_addr,
 							PAIRWISE_KEYIDX, CAM_PAIRWISE_KEY_POSITION,

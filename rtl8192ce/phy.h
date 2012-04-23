@@ -59,7 +59,7 @@
 
 #define IQK_DELAY_TIME				1
 
-#define RF90_PATH_MAX				2
+#define RF6052_MAX_PATH				2
 
 #define CT_OFFSET_MAC_ADDR 			0X16
 

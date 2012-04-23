@@ -717,7 +717,7 @@ void rtl92de_tx_fill_desc(struct ieee80211_hw *hw,
 			  struct sk_buff *skb, u8 hw_queue,
 			  struct rtl_tcb_desc *ptcb_desc);
 bool rtl92de_rx_query_desc(struct ieee80211_hw *hw,
-			   struct rtl_stats *stats,
+			   struct rtl_stats *status,
 			   struct ieee80211_rx_status *rx_status,
 			   u8 *pdesc, struct sk_buff *skb);
 void rtl92de_set_desc(u8 *pdesc, bool istx, u8 desc_name, u8 *val);

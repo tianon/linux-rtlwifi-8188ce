@@ -28,6 +28,7 @@
  *****************************************************************************/
 
 #include <linux/ip.h>
+#include <linux/module.h>
 #include "wifi.h"
 #include "rc.h"
 #include "base.h"
@@ -52,7 +53,8 @@
  *5) frame process functions
  *6) IOT functions
  *7) sysfs functions
- *8) ...
+ *8) vif functions
+ *9) ...
  */
 
 /*********************************************************
@@ -333,6 +335,10 @@ static void _rtl_init_mac80211(struct ieee80211_hw *hw)
 	    BIT(NL80211_IFTYPE_STATION) |
 	    BIT(NL80211_IFTYPE_ADHOC);
 
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,39))
+	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
+#endif
+
 	hw->wiphy->rts_threshold = 2347;
 
 	hw->queues = AC_MAX;
@@ -345,6 +351,9 @@ static void _rtl_init_mac80211(struct ieee80211_hw *hw)
 	hw->max_rate_tries = 4;
 	/* hw->max_rates = 1; */
 	hw->sta_data_size = sizeof(struct rtl_sta_info);
+#ifdef VIF_TODO
+	hw->vif_data_size = sizeof(struct rtl_vif_info);
+#endif
 
 	/* <6> mac address */
 	if (is_valid_ether_addr(rtlefuse->dev_addr)) {
@@ -434,6 +443,17 @@ void rtl_deinit_rfkill(struct ieee80211_hw *hw)
 	wiphy_rfkill_stop_polling(hw->wiphy);
 }
 
+#ifdef VIF_TODO
+static void rtl_init_vif(struct ieee80211_hw *hw)
+{
+	struct rtl_priv *rtlpriv = rtl_priv(hw);
+
+	INIT_LIST_HEAD(&rtlpriv->vif_priv.vif_list);
+
+	rtlpriv->vif_priv.vifs = 0;
+}
+#endif
+
 int rtl_init_core(struct ieee80211_hw *hw)
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
@@ -442,6 +462,7 @@ int rtl_init_core(struct ieee80211_hw *hw)
 	/* <1> init mac80211 */
 	_rtl_init_mac80211(hw);
 	rtlmac->hw = hw;
+	rtlmac->link_state = MAC80211_NOLINK;
 
 	/* <2> rate control register */
 	hw->rate_control_algorithm = "rtl_rc";
@@ -453,12 +474,6 @@ int rtl_init_core(struct ieee80211_hw *hw)
 	if (rtl_regd_init(hw, rtl_reg_notifier)) {
 		RT_TRACE(COMP_ERR, DBG_EMERG, ("REGD init failed\n"));
 		return 1;
-	} else {
-		/* CRDA regd hint must after init CRDA */
-		if (regulatory_hint(hw->wiphy, rtlpriv->regd.alpha2)) {
-			RT_TRACE(COMP_ERR, DBG_WARNING,
-				 ("regulatory_hint fail\n"));
-		}
 	}
 
 	/* <4> locks */
@@ -473,13 +488,17 @@ int rtl_init_core(struct ieee80211_hw *hw)
 	spin_lock_init(&rtlpriv->locks.entry_list_lock);
 	spin_lock_init(&rtlpriv->locks.cck_and_rw_pagea_lock);
 	spin_lock_init(&rtlpriv->locks.check_sendpkt_lock);
-	rtlmac->link_state = MAC80211_NOLINK;
 
 	/* <5> init list */
 	INIT_LIST_HEAD(&rtlpriv->entry_list);
 
 	/* <6> init deferred work */
 	_rtl_init_deferred_work(hw);
+
+	/* <7> */
+#ifdef VIF_TODO
+	rtl_init_vif(hw);
+#endif
 
 	return 0;
 }
@@ -944,7 +963,7 @@ end:
  * functions called by core.c
  *
  *********************************************************/
-int rtl_tx_agg_start(struct ieee80211_hw *hw,
+int rtl_tx_agg_start(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 		struct ieee80211_sta *sta, u16 tid, u16 *ssn)
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
@@ -969,20 +988,11 @@ int rtl_tx_agg_start(struct ieee80211_hw *hw,
 	*ssn = tid_data->seq_number;
 	tid_data->agg.agg_state = RTL_AGG_START;
 
-/*<delete in kernel start>*/
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-/*<delete in kernel end>*/
-	ieee80211_start_tx_ba_cb_irqsafe(rtlpriv->mac80211.vif, sta->addr, tid);
-/*<delete in kernel start>*/
-#else
-	ieee80211_start_tx_ba_cb_irqsafe(hw, sta->addr, tid);
-#endif
-/*<delete in kernel end>*/
-
+	ieee80211_start_tx_ba_cb_irqsafe(vif, sta->addr, tid);
 	return 0;
 }
 
-int rtl_tx_agg_stop(struct ieee80211_hw *hw,
+int rtl_tx_agg_stop(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 		struct ieee80211_sta *sta, u16 tid)
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
@@ -1007,16 +1017,7 @@ int rtl_tx_agg_stop(struct ieee80211_hw *hw,
 	tid_data = &sta_entry->tids[tid];
 	sta_entry->tids[tid].agg.agg_state = RTL_AGG_STOP;
 
-/*<delete in kernel start>*/
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,33))
-/*<delete in kernel end>*/
-	ieee80211_stop_tx_ba_cb_irqsafe(rtlpriv->mac80211.vif, sta->addr, tid);
-/*<delete in kernel start>*/
-#else
-	ieee80211_stop_tx_ba_cb_irqsafe(hw, sta->addr, tid);
-#endif
-/*<delete in kernel end>*/
-
+	ieee80211_stop_tx_ba_cb_irqsafe(vif, sta->addr, tid);
 	return 0;
 }
 
@@ -1144,6 +1145,8 @@ void rtl_watchdog_wq_callback(void *data)
 	struct rtl_hal *rtlhal = rtl_hal(rtl_priv(hw));
 	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
 	bool b_busytraffic = false;
+	bool b_tx_busy_traffic = false;
+	bool b_rx_busy_traffic = false;
 	bool b_higher_busytraffic = false;
 	bool b_higher_busyrxtraffic = false;
 	u8 idx, tid;
@@ -1191,8 +1194,13 @@ void rtl_watchdog_wq_callback(void *data)
 		aver_tx_cnt_inperiod = tx_cnt_inp4eriod / 4;
 
 		/* (2) check traffic busy */
-		if (aver_rx_cnt_inperiod > 100 || aver_tx_cnt_inperiod > 100)
+		if (aver_rx_cnt_inperiod > 100 || aver_tx_cnt_inperiod > 100) {
 			b_busytraffic = true;
+			if (aver_rx_cnt_inperiod > aver_tx_cnt_inperiod)
+				b_rx_busy_traffic = true;
+			else
+				b_tx_busy_traffic = false;
+		}
 
 		/* Higher Tx/Rx data. */
 		if (aver_rx_cnt_inperiod > 4000 ||
@@ -1242,6 +1250,8 @@ void rtl_watchdog_wq_callback(void *data)
 		rtlpriv->link_info.tidtx_inperiod[tid] = 0;
 
 	rtlpriv->link_info.b_busytraffic = b_busytraffic;
+	rtlpriv->link_info.b_rx_busy_traffic = b_rx_busy_traffic;
+	rtlpriv->link_info.b_tx_busy_traffic = b_tx_busy_traffic;
 	rtlpriv->link_info.b_higher_busytraffic = b_higher_busytraffic;
 	rtlpriv->link_info.b_higher_busyrxtraffic = b_higher_busyrxtraffic;
 
@@ -1249,20 +1259,25 @@ void rtl_watchdog_wq_callback(void *data)
 	rtlpriv->cfg->ops->dm_watchdog(hw);
 
 	/* <4> roaming */
-	if (mac->link_state >= MAC80211_LINKED) {
+	if (mac->link_state == MAC80211_LINKED &&
+			mac->opmode == NL80211_IFTYPE_STATION) {
 		if ((rtlpriv->link_info.bcn_rx_inperiod +
 			rtlpriv->link_info.num_rx_inperiod) == 0) {
-			if (mac->opmode == NL80211_IFTYPE_STATION) {
-				RT_TRACE(COMP_ERR, DBG_EMERG,
-					("AP off, try to reconnect now\n"));
+			rtlpriv->link_info.roam_times++;
+			RT_TRACE(COMP_ERR, DBG_DMESG, ("AP off for %d s\n",
+				(rtlpriv->link_info.roam_times * 2)));
+
+			/* if we can't recv beacon for 6s, we should reconnect this AP */
+			if (rtlpriv->link_info.roam_times >= 3) {
+				RT_TRACE(COMP_ERR, DBG_EMERG, ("AP off, try to reconnect now\n"));
+				rtlpriv->link_info.roam_times = 0;
 				ieee80211_connection_loss(rtlpriv->mac80211.vif);
 			}
 		} else {
-			rtlpriv->link_info.bcn_rx_inperiod = 0;
+			rtlpriv->link_info.roam_times = 0;
 		}
-	} else {
-		rtlpriv->link_info.bcn_rx_inperiod = 0;
 	}
+	rtlpriv->link_info.bcn_rx_inperiod = 0;
 }
 
 void rtl_watch_dog_timer_callback(unsigned long data)
@@ -1653,6 +1668,87 @@ struct attribute_group rtl_attribute_group = {
 	.name = "rtlsysfs",
 	.attrs = rtl_sysfs_entries,
 };
+
+#ifdef VIF_TODO
+/*********************************************************
+ *
+ * vif functions
+ *
+ *********************************************************/
+static inline struct ieee80211_vif *
+rtl_get_vif(struct rtl_vif_info *vif_priv)
+{
+	return container_of((void *)vif_priv, struct ieee80211_vif, drv_priv);
+}
+
+/* Protected by ar->mutex or RCU */
+struct ieee80211_vif *rtl_get_main_vif(struct ieee80211_hw *hw)
+{
+	struct rtl_priv *rtlpriv = rtl_priv(hw);
+	struct rtl_vif_info *cvif;
+
+	list_for_each_entry_rcu(cvif, &rtlpriv->vif_priv.vif_list, list) {
+		if (cvif->active)
+			return rtl_get_vif(cvif);
+	}
+
+	return NULL;
+}
+
+static inline bool is_main_vif(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+{
+	bool ret;
+
+	rcu_read_lock();
+	ret = (rtl_get_main_vif(hw) == vif);
+	rcu_read_unlock();
+	return ret;
+}
+
+bool rtl_set_vif_info(struct ieee80211_hw *hw, struct ieee80211_vif *vif)
+{
+	struct rtl_vif_info *vif_info = (void *) vif->drv_priv;
+	struct rtl_priv *rtlpriv = rtl_priv(hw);
+	int vif_id = -1;
+
+	if (rtlpriv->vif_priv.vifs >= MAX_VIRTUAL_MAC) {
+		RT_TRACE(COMP_ERR, DBG_WARNING,
+			 ("vif number can not bigger than %d, now vifs is:%d\n",
+			  MAX_VIRTUAL_MAC, rtlpriv->vif_priv.vifs));
+		return false;
+	}
+
+	rcu_read_lock();
+	vif_id = bitmap_find_free_region(&rtlpriv->vif_priv.vif_bitmap, MAX_VIRTUAL_MAC, 0);
+	RT_TRACE(COMP_MAC80211, DBG_DMESG, ("%s vid_id:%d\n", __func__, vif_id));
+
+	if (vif_id < 0) {
+		rcu_read_unlock();
+		return false;
+	}
+
+	BUG_ON(rtlpriv->vif_priv.vif[vif_id].id != vif_id);
+	vif_info->active = true;
+	vif_info->id = vif_id;
+	vif_info->enable_beacon = false;
+	rtlpriv->vif_priv.vifs++;
+	if (rtlpriv->vif_priv.vifs > 1) {
+		rtlpriv->psc.b_inactiveps = false;
+		rtlpriv->psc.b_swctrl_lps = false;
+		rtlpriv->psc.b_fwctrl_lps = false;
+	}
+
+	list_add_tail_rcu(&vif_info->list, &rtlpriv->vif_priv.vif_list);
+	rcu_assign_pointer(rtlpriv->vif_priv.vif[vif_id].vif, vif);
+
+	RT_TRACE(COMP_MAC80211, DBG_DMESG, ("vifaddress:%p %p %p\n",
+				rtlpriv->vif_priv.vif[vif_id].vif, vif, rtl_get_main_vif(hw)));
+
+	rcu_read_unlock();
+
+	return true;
+}
+#endif
 
 MODULE_AUTHOR("lizhaoming	<chaoming_li@realsil.com.cn>");
 MODULE_AUTHOR("Realtek WlanFAE	<wlanfae@realtek.com>");

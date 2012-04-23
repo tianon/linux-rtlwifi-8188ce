@@ -405,7 +405,7 @@ void rtl92se_enable_hw_security_config(struct ieee80211_hw *hw)
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	u8 sec_reg_value = 0x0;
 
-	RT_TRACE(COMP_INIT, DBG_LOUD, ("PairwiseEncAlgorithm = %d "
+	RT_TRACE(COMP_INIT, DBG_DMESG, ("PairwiseEncAlgorithm = %d "
 			"GroupEncAlgorithm = %d\n", rtlpriv->sec.pairwise_enc_algorithm,
 			rtlpriv->sec.group_enc_algorithm));
 
@@ -421,7 +421,7 @@ void rtl92se_enable_hw_security_config(struct ieee80211_hw *hw)
 		sec_reg_value |= SCR_RXUSEDK;
 	}
 
-	RT_TRACE(COMP_SEC, DBG_LOUD, ("The SECR-value %x \n",
+	RT_TRACE(COMP_SEC, DBG_DMESG, ("The SECR-value %x \n",
 			sec_reg_value));
 
 	rtlpriv->cfg->ops->set_hw_reg(hw, HW_VAR_WPA_CONFIG, &sec_reg_value);
@@ -1052,7 +1052,22 @@ int rtl92se_hw_init(struct ieee80211_hw *hw)
 	}
 
 	/* We enable high power and RA related mechanism after NIC initialized. */
-	rtl92s_phy_set_fw_cmd(hw, FW_CMD_RA_INIT);
+	if (hal_get_firmwareverison(rtlpriv) >= 0x35) {
+		/* Fw v.53 and later. */
+		rtl92s_phy_set_fw_cmd(hw, FW_CMD_RA_INIT);
+	} else if (hal_get_firmwareverison(rtlpriv) >= 0x34) {
+		/* Fw v.52 and later. */
+		rtl_write_dword(rtlpriv, WFM5, FW_RA_INIT);
+		rtl92s_phy_chk_fwcmd_iodone(hw);
+	} else {
+		/* Compatible earlier FW version. */
+		rtl_write_dword(rtlpriv, WFM5, FW_RA_RESET);
+		rtl92s_phy_chk_fwcmd_iodone(hw);
+		rtl_write_dword(rtlpriv, WFM5, FW_RA_ACTIVE);
+		rtl92s_phy_chk_fwcmd_iodone(hw);
+		rtl_write_dword(rtlpriv, WFM5, FW_RA_REFRESH);
+		rtl92s_phy_chk_fwcmd_iodone(hw);
+	}
 
 	/* Add to prevent ASPM bug. */
 	/* Always enable hst and NIC clock request. */
@@ -1552,7 +1567,7 @@ void rtl92se_set_beacon_related_registers(struct ieee80211_hw *hw)
 	/* TODO: bcn_ifs may required to be changed on ASIC */
 	bcntime_cfg |= bcn_ifs << BCN_TCFG_IFS;
 
-	/*for beacon changed */
+	/* for beacon changed. */
 	rtl92s_phy_set_beacon_hwreg(hw, mac->beacon_interval);
 }
 
@@ -2412,29 +2427,15 @@ void rtl92se_set_key(struct ieee80211_hw *hw,	u32 key_index, u8* p_macaddr,
 				rtl_cam_del_entry(hw, p_macaddr);
 			rtl_cam_delete_one_entry(hw, p_macaddr, entry_id);
 		} else {
-			RT_TRACE(COMP_SEC, DBG_LOUD,
-				 ("The insert KEY length is %d\n",
-				  rtlpriv->sec.key_len[PAIRWISE_KEYIDX]));
-			RT_TRACE(COMP_SEC, DBG_LOUD,
-				 ("The insert KEY  is %x %x \n",
-				  rtlpriv->sec.key_buf[0][0],
-				  rtlpriv->sec.key_buf[0][1]));
-
 			RT_TRACE(COMP_SEC, DBG_DMESG, ("add one entry\n"));
 			if (is_pairwise) {
-				RT_PRINT_DATA(rtlpriv, COMP_SEC, DBG_LOUD,
-					      "Pairwiase Key content :", rtlpriv->sec.pairwise_key,
-					      rtlpriv->sec.key_len[PAIRWISE_KEYIDX]);
-
-				RT_TRACE(COMP_SEC, DBG_DMESG,
-					 ("set Pairwiase key\n"));
+				RT_TRACE(COMP_SEC, DBG_DMESG, ("set Pairwiase key\n"));
 
 				rtl_cam_add_one_entry(hw, macaddr, key_index,
 						      entry_id, enc_algo, CAM_CONFIG_NO_USEDK,
 						      rtlpriv->sec.key_buf[key_index]);
 			} else {
-				RT_TRACE(COMP_SEC, DBG_DMESG,
-					 ("set group key\n"));
+				RT_TRACE(COMP_SEC, DBG_DMESG, ("set group key\n"));
 
 				if (mac->opmode == NL80211_IFTYPE_ADHOC) {
 					rtl_cam_add_one_entry(hw, rtlefuse->dev_addr,

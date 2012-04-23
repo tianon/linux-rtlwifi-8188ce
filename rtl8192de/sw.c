@@ -26,6 +26,7 @@
  *****************************************************************************/
 
 #include <linux/vmalloc.h>
+#include <linux/module.h>
 
 #include "../wifi.h"
 #include "../core.h"
@@ -376,15 +377,26 @@ MODULE_PARM_DESC(swenc, "using hardware crypto (default 0 [hardware])\n");
 MODULE_PARM_DESC(ips, "using no link power save (default 1 is open)\n");
 MODULE_PARM_DESC(swlps, "using linked sw control power save (default 1 is open)\n");
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29))
+static const SIMPLE_DEV_PM_OPS(rtlwifi_pm_ops, rtl_pci_suspend, rtl_pci_resume);
+#endif
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29))
+compat_pci_suspend(rtl_pci_suspend)
+compat_pci_resume(rtl_pci_resume)
+#endif
+
 static struct pci_driver rtl92de_driver = {
 	.name = KBUILD_MODNAME,
 	.id_table = rtl92de_pci_ids,
 	.probe = rtl_pci_probe,
 	.remove = rtl_pci_disconnect,
 
-#ifdef CONFIG_PM
-	.suspend = rtl_pci_suspend,
-	.resume = rtl_pci_resume,
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29))
+	.driver.pm = &rtlwifi_pm_ops,
+#elif defined(CONFIG_PM)
+	.suspend = rtl_pci_suspend_compat,
+	.resume = rtl_pci_resume_compat,
 #endif
 
 };

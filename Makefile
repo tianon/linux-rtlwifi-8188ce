@@ -18,6 +18,7 @@ PCI_MAIN_OBJS	:= base.o	\
 		cam.o	\
 		ps.o	\
 		core.o	\
+		stats.o	\
 		pci.o	\
 
 rtlwifi-objs += $(PCI_MAIN_OBJS)
@@ -30,7 +31,6 @@ all:
 	@make -C rtl8192se/
 	@cp $(SYMBOL_FILE) rtl8192de/
 	@make -C rtl8192de/
-
 install: all
 	find /lib/modules/$(shell uname -r) -name "r8192se_*.ko" -exec rm {} \;
 	find /lib/modules/$(shell uname -r) -name "r8192ce_*.ko" -exec rm {} \;
@@ -41,12 +41,11 @@ install: all
 	$(shell mkdir $(MODDESTDIR)/rtl8192se)
 	$(shell mkdir $(MODDESTDIR)/rtl8192ce)
 	$(shell mkdir $(MODDESTDIR)/rtl8192de)
-
 	@install -p -m 644 rtlwifi.ko $(MODDESTDIR)	
 	@install -p -m 644 ./rtl8192se/rtl8192se.ko $(MODDESTDIR)/rtl8192se
 	@install -p -m 644 ./rtl8192ce/rtl8192ce.ko $(MODDESTDIR)/rtl8192ce
 	@install -p -m 644 ./rtl8192de/rtl8192de.ko $(MODDESTDIR)/rtl8192de
-	
+
 	@depmod -a
 
 	@#copy firmware img to target fold
