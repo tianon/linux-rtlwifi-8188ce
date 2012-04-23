@@ -111,3 +111,5 @@ rtlwifi.ko
 rtlwifi.mod.c
 rtlwifi.mod.o
 rtlwifi.o
+.stats.o.cmd
+stats.o
