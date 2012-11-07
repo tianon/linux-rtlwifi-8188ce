@@ -116,7 +116,6 @@ bool rtl_ps_set_rf_state(struct ieee80211_hw *hw,
 			while (ppsc->rfchange_inprogress) {
 				rfwait_cnt++;
 				mdelay(1);
-
 				/*
 				 *Wait too long, return false to avoid
 				 *to be stuck here.
@@ -242,6 +241,9 @@ void rtl_ips_nic_off_wq_callback(void *data)
 	if (rtlpriv->sec.being_setkey)
 		return;
 
+	if(rtlpriv->cfg->ops->bt_turn_off_bt_coexist_before_enter_lps)
+		rtlpriv->cfg->ops->bt_turn_off_bt_coexist_before_enter_lps(hw);
+
 	if (ppsc->b_inactiveps) {
 		rtstate = ppsc->rfpwr_state;
 
@@ -291,9 +293,8 @@ void rtl_ips_nic_on(struct ieee80211_hw *hw)
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_ps_ctl *ppsc = rtl_psc(rtl_priv(hw));
 	enum rf_pwrstate rtstate;
-	unsigned long flags;
 
-	spin_lock_irqsave(&rtlpriv->locks.ips_lock, flags);
+	spin_lock(&rtlpriv->locks.ips_lock);
 	if (ppsc->b_inactiveps) {
 		rtstate = ppsc->rfpwr_state;
 
@@ -306,7 +307,7 @@ void rtl_ips_nic_on(struct ieee80211_hw *hw)
 			_rtl_ps_inactive_ps(hw);
 		}
 	}
-	spin_unlock_irqrestore(&rtlpriv->locks.ips_lock, flags);
+	spin_unlock(&rtlpriv->locks.ips_lock);
 }
 
 /*for FW LPS*/

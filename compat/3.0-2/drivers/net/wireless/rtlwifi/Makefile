@@ -17,5 +17,6 @@ endif
 obj-$(CONFIG_RTL8192CE)		+= rtl8192ce/
 obj-$(CONFIG_RTL8192DE)         += rtl8192de/
 obj-$(CONFIG_RTL8192SE)         += rtl8192se/
+obj-$(CONFIG_RTL8723E)         += rtl8723e/
 
 ccflags-y += -D__CHECK_ENDIAN__ 

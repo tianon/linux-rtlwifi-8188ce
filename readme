@@ -1,9 +1,10 @@
-Release Date: 2011-12-30, ver 0005
+Release Date: 2012-05-09, ver 0006
 Realtek Linux mac80211 based driver:
    --This driver supports follwing RealTek PCIE Wireless LAN NICs:
 	RTL8188CE/RTL8192CE
 	RTL8191SE/RTL8192SE
 	RTL8192DE
+	RTL8723AE
 
    --This driver supports follwing Linux OS:
  	Fedora Core
@@ -35,6 +36,7 @@ The driver is composed of several parts:
 	   2.2 rtl8192ce
 	   2.2 rtl8192se
 	   2.2 rtl8192de
+	   2.2 rtl8723ae
 	
 	3. Script to build the modules
 	   3.1 Makefile 

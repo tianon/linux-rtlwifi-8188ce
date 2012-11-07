@@ -1013,6 +1013,15 @@ static irqreturn_t _rtl_pci_interrupt(int irq, void *dev_id)
 		_rtl_pci_rx_interrupt(hw);
 	}
 
+	/*fw related*/
+	if (rtlhal->hw_type == HARDWARE_TYPE_RTL8723AE) {
+		if (inta & rtlpriv->cfg->maps[RTL_IMR_C2HCMD]) {
+			RT_TRACE(COMP_INTR, DBG_TRACE, ("firmware interrupt!\n"));
+			queue_delayed_work(rtlpriv->works.rtl_wq,
+						&rtlpriv->works.fwevt_wq, 0);
+		}
+	}
+
 	if(rtlpriv->rtlhal.b_earlymode_eanble)
 		tasklet_schedule(&rtlpriv->works.irq_tasklet);
 

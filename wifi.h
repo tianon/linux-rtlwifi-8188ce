@@ -274,7 +274,7 @@ enum hw_variables {
 	HW_VAR_MRC,
 };
 
-enum _RT_MEDIA_STATUS {
+enum rt_media_status {
 	RT_MEDIA_DISCONNECT = 0,
 	RT_MEDIA_CONNECT = 1
 };
@@ -436,6 +436,7 @@ enum rtl_var_map {
 	RTL_IMR_VODOK,		/*AC_VO DMA Interrupt */
 	RTL_IMR_ROK,		/*Receive DMA OK Interrupt */
 	RTL_IBSS_INT_MASKS,	/*(RTL_IMR_BcnInt | RTL_IMR_TBDOK | RTL_IMR_TBDER) */
+	RTL_IMR_C2HCMD,		/*fw interrupt*/
 
 	/*CCK Rates, TxHT = 0 */
 	RTL_RC_CCK_RATE1M,
@@ -1466,6 +1467,9 @@ struct rtl_hal_ops {
 	void (*check_switch_to_dmdp) (struct ieee80211_hw * hw);
 	void (*dualmac_easy_concurrent) (struct ieee80211_hw *hw);
 	void (*dualmac_switch_to_dmdp) (struct ieee80211_hw *hw);
+	void (*c2h_command_handle) (struct ieee80211_hw *hw);
+	void (*bt_wifi_media_status_notify) (struct ieee80211_hw *hw, bool mstate);
+	void (*bt_turn_off_bt_coexist_before_enter_lps) (struct ieee80211_hw *hw);
 };
 
 struct rtl_intf_ops {
@@ -1491,7 +1495,7 @@ struct rtl_intf_ops {
 
 struct rtl_mod_params {
 	/* default: 0 = using hardware encryption */
-	int sw_crypto;
+	bool sw_crypto;
 
 	/* default: 1 = using no linked power save */
 	bool b_inactiveps;
@@ -1557,6 +1561,7 @@ struct rtl_works {
 	/* For SW LPS */
 	struct delayed_work ps_work;
 	struct delayed_work ps_rfon_wq;
+	struct delayed_work fwevt_wq;
 };
 
 struct rtl_debug {
@@ -1707,92 +1712,61 @@ enum bt_radio_shared {
         BT_RADIO_SHARED = 0,
         BT_RADIO_INDIVIDUAL = 1,
 };
-struct btdm_8723 {
-	bool b_all_off;
-	bool b_agc_table_en;
-	bool b_adc_back_off_on;
-	bool b2_ant_hid_en;
-	bool b_low_penalty_rate_adaptive;
-	bool b_rf_rx_lpf_shrink;
-	bool b_reject_aggre_pkt;
-	bool b_tdma_on;
-	u8 tdma_ant;
-	u8 tdma_nav;
-	u8 tdma_dac_swing;
-	u8 fw_dac_swing_lvl;
-	bool b_pta_on;
-	u32	val_0x6c0;
-	u32	val_0x6c8;
-	u32	val_0x6cc;
-	bool b_sw_dac_swing_on;
-	u32	sw_dac_swing_lvl;
-	u32	wlan_act_hi;
-	u32	wlan_act_lo;
-	u32	bt_retry_index;
-};
-struct bt_coexist_8723 {
-	u32	high_priority_tx;
-	u32	high_priority_rx;
-	u32	low_priority_tx;
-	u32	low_priority_rx;
-	u32	bt_rssi;
-	struct	btdm_8723	btdm;
-};
-struct bt_traffic_statistics{
-	bool b_tx_busy_traffic;
-	bool b_rx_busy_traffic;
-	bool b_idle;
-	u32	tx_pkt_cnt_in_period;
-	u32	rx_pkt_cnt_in_period;
-	u32	tx_pkt_len_in_period;
-	u32	rx_pkt_len_in_period;
-};
 
 struct bt_coexist_info {
 
 	/* EEPROM BT info. */
-        u8 eeprom_bt_coexist;
-        u8 eeprom_bt_type;
-        u8 eeprom_bt_ant_num;
-        u8 eeprom_bt_ant_isolation;
-        u8 eeprom_bt_radio_shared;
+	u8 eeprom_bt_coexist;
+	u8 eeprom_bt_type;
+	u8 eeprom_bt_ant_num;
+	u8 eeprom_bt_ant_isolation;
+	u8 eeprom_bt_radio_shared;
 
-        u8 bt_coexistence;
-        u8 bt_ant_num;
-        u8 bt_coexist_type;
-        u8 bt_state;
-        u8 bt_cur_state;	/* 0:on, 1:off */
-        u8 bt_ant_isolation;	/* 0:good, 1:bad */
-        u8 bt_pape_ctrl;	/* 0:SW, 1:SW/HW dynamic */
-        u8 bt_service;
-        u8 bt_radio_shared_type;
-        u8 bt_rfreg_origin_1e;
-        u8 bt_rfreg_origin_1f;
-        u8 bt_rssi_state;
-        u32 ratio_tx;
-        u32 ratio_pri;
-        u32 bt_edca_ul;
-        u32 bt_edca_dl;
+	u8 bt_coexistence;
+	u8 bt_ant_num;
+	u8 bt_coexist_type;
+	u8 bt_state;
+	u8 bt_cur_state;	/* 0:on, 1:off */
+	u8 bt_ant_isolation;	/* 0:good, 1:bad */
+	u8 bt_pape_ctrl;	/* 0:SW, 1:SW/HW dynamic */
+	u8 bt_service;
+	u8 bt_radio_shared_type;
+	u8 bt_rfreg_origin_1e;
+	u8 bt_rfreg_origin_1f;
+	u8 bt_rssi_state;
+	u32 ratio_tx;
+	u32 ratio_pri;
+	u32 bt_edca_ul;
+	u32 bt_edca_dl;
 
-        bool b_init_set;
-        bool b_bt_busy_traffic;
-        bool b_bt_traffic_mode_set;
-        bool b_bt_non_traffic_mode_set;
+	bool b_init_set;
+	bool b_bt_busy_traffic;
+	bool b_bt_traffic_mode_set;
+	bool b_bt_non_traffic_mode_set;
 
-        bool b_fw_coexist_all_off;
-        bool b_sw_coexist_all_off;
+	bool b_fw_coexist_all_off;
+	bool b_sw_coexist_all_off;
 	bool b_hw_coexist_all_off;
-        u32 current_state;
-        u32 previous_state;
-        u8 bt_pre_rssi_state;
+	u32 current_state;
+	u32 previous_state;
+	u32 current_state_h;
+	u32 previous_state_h;
+	
+	u8 bt_pre_rssi_state;
+	u8 bt_pre_rssi_state1;
 
-        u8 b_reg_bt_iso;
-        u8 b_reg_bt_sco;
+	u8 b_reg_bt_iso;
+	u8 b_reg_bt_sco;
 	bool b_balance_on;
-	struct bt_coexist_8723 hal_coex_8723;
-	struct bt_traffic_statistics bt21_traffic_statistics;
-	struct bt_traffic_statistics bt30_traffic_statistics;
+	u8 bt_active_zero_cnt;
+	bool b_cur_bt_disabled;
+	bool b_pre_bt_disabled;
 
+	u8 bt_profile_case;
+	u8 bt_profile_action;
+	bool b_bt_busy;
+	bool b_hold_for_bt_operation;
+	u8 lps_counter;
 };
 
 

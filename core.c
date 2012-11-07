@@ -194,6 +194,19 @@ static int rtl_op_add_interface(struct ieee80211_hw *hw,
 		rtlpriv->cfg->ops->set_hw_reg(hw, HW_VAR_BASIC_RATE,
 				(u8 *) (&mac->basic_rates));
 		break;
+	case NL80211_IFTYPE_MESH_POINT:
+		RT_TRACE(COMP_MAC80211, DBG_LOUD,
+			 ("NL80211_IFTYPE_MESH_POINT \n"));
+	
+		mac->link_state = MAC80211_LINKED;
+		rtlpriv->cfg->ops->set_bcn_reg(hw);
+		if (rtlpriv->rtlhal.current_bandtype == BAND_ON_2_4G)
+			mac->basic_rates = 0xfff;
+		else
+			mac->basic_rates = 0xff0;
+		rtlpriv->cfg->ops->set_hw_reg(hw, HW_VAR_BASIC_RATE,
+				(u8 *) (&mac->basic_rates));
+		break;
 	default:
 		RT_TRACE(COMP_ERR, DBG_EMERG,
 			 ("operation mode %d is not support!\n", vif->type));
@@ -440,7 +453,8 @@ static void rtl_op_configure_filter(struct ieee80211_hw *hw,
 	 * and nolink check bssid is set in set network_type */
 	if ((changed_flags & FIF_BCN_PRBRESP_PROMISC) &&
 		(mac->link_state >= MAC80211_LINKED)) {
-		if (mac->opmode != NL80211_IFTYPE_AP) {
+		if (mac->opmode != NL80211_IFTYPE_AP &&
+			mac->opmode != NL80211_IFTYPE_MESH_POINT) {
 			if (*new_flags & FIF_BCN_PRBRESP_PROMISC) {
 				rtlpriv->cfg->ops->set_chk_bssid(hw, false);
 			} else {
@@ -844,6 +858,8 @@ static void rtl_op_bss_info_changed(struct ieee80211_hw *hw,
 				ppsc->report_linked = false;
 			}
 		}
+		if(rtlpriv->cfg->ops->bt_wifi_media_status_notify)
+			rtlpriv->cfg->ops->bt_wifi_media_status_notify(hw, ppsc->report_linked);
 	}
 
 out:
@@ -1021,7 +1037,7 @@ static int rtl_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 		return -ENOSPC;	/*User disabled HW-crypto */
 	}
 	/* To support IBSS, use sw-crypto for GTK */
-	if(vif->type == NL80211_IFTYPE_ADHOC && 
+	if(((vif->type == NL80211_IFTYPE_ADHOC) || (vif->type == NL80211_IFTYPE_MESH_POINT)) && 
 		!(key->flags & IEEE80211_KEY_FLAG_PAIRWISE))
 		return -ENOSPC;
 	RT_TRACE(COMP_SEC, DBG_DMESG,
@@ -1125,7 +1141,8 @@ static int rtl_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 	 * be set when wep key setting */
 	/* we must reset sec_info after lingked before set key,
 	 * or some flag will be wrong*/
-	if (vif->type == NL80211_IFTYPE_AP) {
+	if (vif->type == NL80211_IFTYPE_AP ||
+		vif->type == NL80211_IFTYPE_MESH_POINT) {
 		if (!group_key || key_type == WEP40_ENCRYPTION ||
 			key_type == WEP104_ENCRYPTION) {
 			if (group_key) {
@@ -1208,7 +1225,8 @@ static int rtl_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
 		RT_TRACE(COMP_SEC, DBG_DMESG,
 			 ("disable key delete one entry\n"));
 		/*set local buf about wep key. */
-		if (vif->type == NL80211_IFTYPE_AP) {
+		if (vif->type == NL80211_IFTYPE_AP ||
+			vif->type == NL80211_IFTYPE_MESH_POINT) {
 			if (sta)
 				rtl_cam_del_entry(hw, sta->addr);
 		}

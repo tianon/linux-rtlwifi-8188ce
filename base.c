@@ -36,6 +36,7 @@
 #include "cam.h"
 #include "ps.h"
 #include "regd.h"
+#include "pci.h"
 
 /*
  *NOTICE!!!: This file will be very big, we hsould
@@ -316,7 +317,9 @@ static void _rtl_init_mac80211(struct ieee80211_hw *hw)
 	/* <5> set hw caps */
 	hw->flags = IEEE80211_HW_SIGNAL_DBM |
 	    IEEE80211_HW_RX_INCLUDES_FCS |
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,4,0))
 	    IEEE80211_HW_BEACON_FILTER |
+#endif
 	    IEEE80211_HW_AMPDU_AGGREGATION |
 	    IEEE80211_HW_REPORTS_TX_ACK_STATUS |
 	    IEEE80211_HW_CONNECTION_MONITOR |
@@ -333,7 +336,8 @@ static void _rtl_init_mac80211(struct ieee80211_hw *hw)
 	hw->wiphy->interface_modes =
 	    BIT(NL80211_IFTYPE_AP) |
 	    BIT(NL80211_IFTYPE_STATION) |
-	    BIT(NL80211_IFTYPE_ADHOC);
+	    BIT(NL80211_IFTYPE_ADHOC) |
+	    BIT(NL80211_IFTYPE_MESH_POINT);
 
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,39))
 	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
@@ -396,6 +400,8 @@ static void _rtl_init_deferred_work(struct ieee80211_hw *hw)
 			  (void *)rtl_swlps_wq_callback);
 	INIT_DELAYED_WORK(&rtlpriv->works.ps_rfon_wq,
 			  (void *)rtl_swlps_rfon_wq_callback);
+	INIT_DELAYED_WORK(&rtlpriv->works.fwevt_wq,
+			  (void *)rtl_fwevt_wq_callback);
 
 }
 
@@ -409,6 +415,7 @@ void rtl_deinit_deferred_work(struct ieee80211_hw *hw)
 	cancel_delayed_work(&rtlpriv->works.ips_nic_off_wq);
 	cancel_delayed_work(&rtlpriv->works.ps_work);
 	cancel_delayed_work(&rtlpriv->works.ps_rfon_wq);
+	cancel_delayed_work(&rtlpriv->works.fwevt_wq);
 }
 
 void rtl_init_rfkill(struct ieee80211_hw *hw)
@@ -563,7 +570,8 @@ static void _rtl_query_shortgi(struct ieee80211_hw *hw,
 	if (mac->opmode == NL80211_IFTYPE_STATION)
 		bw_40 = mac->bw_40;
 	else if (mac->opmode == NL80211_IFTYPE_AP ||
-		mac->opmode == NL80211_IFTYPE_ADHOC)
+		mac->opmode == NL80211_IFTYPE_ADHOC ||
+		mac->opmode == NL80211_IFTYPE_MESH_POINT)
 		bw_40 = sta->ht_cap.cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40;
 
 	if ((bw_40 == true) && sgi_40)
@@ -618,7 +626,8 @@ static void _rtl_txrate_selectmode(struct ieee80211_hw *hw,
 	if (!tcb_desc->disable_ratefallback || !tcb_desc->use_driver_rate) {
 		if (mac->opmode == NL80211_IFTYPE_STATION) {
 			tcb_desc->ratr_index = 0;
-		} else if (mac->opmode == NL80211_IFTYPE_ADHOC) {
+		} else if (mac->opmode == NL80211_IFTYPE_ADHOC ||
+				mac->opmode == NL80211_IFTYPE_MESH_POINT) {
 			if (tcb_desc->b_multicast || tcb_desc->b_broadcast) {
 				tcb_desc->hw_rate = rtlpriv->cfg->maps[RTL_RC_CCK_RATE2M];
 				tcb_desc->use_driver_rate = 1;
@@ -634,7 +643,8 @@ static void _rtl_txrate_selectmode(struct ieee80211_hw *hw,
 	if (rtlpriv->dm.b_useramask) {
 		tcb_desc->ratr_index = ratr_index;
 		/* TODO we will differentiate adhoc and station futrue  */
-		if (mac->opmode == NL80211_IFTYPE_STATION) {
+		if (mac->opmode == NL80211_IFTYPE_STATION ||
+			mac->opmode == NL80211_IFTYPE_MESH_POINT) {
 			tcb_desc->mac_id = 0;
 
 			if (mac->mode == WIRELESS_MODE_N_24G) {
@@ -674,7 +684,8 @@ static void _rtl_query_bandwidth_mode(struct ieee80211_hw *hw,
 	if (!sta)
 		return;
 	if (mac->opmode == NL80211_IFTYPE_AP ||
-		mac->opmode == NL80211_IFTYPE_ADHOC) {
+		mac->opmode == NL80211_IFTYPE_ADHOC ||
+		mac->opmode == NL80211_IFTYPE_MESH_POINT) {
 		if (!(sta->ht_cap.ht_supported) ||
 			!(sta->ht_cap.cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40))
 			return;
@@ -1290,6 +1301,15 @@ void rtl_watch_dog_timer_callback(unsigned long data)
 
 	mod_timer(&rtlpriv->works.watchdog_timer,
 		  jiffies + MSECS(RTL_WATCH_DOG_TIME));
+}
+void rtl_fwevt_wq_callback(void *data)
+{
+	struct rtl_works *rtlworks =
+		container_of_dwork_rtl(data, struct rtl_works, fwevt_wq);
+	struct ieee80211_hw *hw = rtlworks->hw;
+	struct rtl_priv *rtlpriv = rtl_priv(hw);
+	
+	rtlpriv->cfg->ops->c2h_command_handle(hw);
 }
 void rtl_easy_concurrent_retrytimer_callback(unsigned long data)
 {

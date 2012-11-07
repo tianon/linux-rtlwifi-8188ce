@@ -2,7 +2,7 @@
 
 compat_wireless_version="3.0-2"
 
-tar jxvf compat-wireless-${compat_wireless_version}.tar.bz2
+tar jxvf compat-wireless-3.0-2-mesh.tar.bz2
 
 driver_fold=compat-wireless-${compat_wireless_version}/drivers/net/wireless/rtlwifi
 
