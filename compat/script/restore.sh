@@ -1,7 +1,7 @@
 
 #!/bin/bash
 
-src="./2.6.39-1"
+src="./3.2.5-1"
 des="../../../../.."
 
 files="config.mk Makefile scripts/driver-select scripts/unload.sh scripts/wlunload.sh"

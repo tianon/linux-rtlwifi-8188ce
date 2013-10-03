@@ -711,11 +711,24 @@ struct rx_desc_92d {
 
 } __packed;
 
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))
 void rtl92de_tx_fill_desc(struct ieee80211_hw *hw,
 			  struct ieee80211_hdr *hdr,
 			  u8 * pdesc, struct ieee80211_tx_info *info,
 			  struct sk_buff *skb, u8 hw_queue,
 			  struct rtl_tcb_desc *ptcb_desc);
+#else
+/*<delete in kernel end>*/
+void rtl92de_tx_fill_desc(struct ieee80211_hw *hw,
+			  struct ieee80211_hdr *hdr, u8 *pdesc_tx,
+			  struct ieee80211_tx_info *info,
+			  struct ieee80211_sta *sta,
+			  struct sk_buff *skb,
+			  u8 hw_queue, struct rtl_tcb_desc *ptcb_desc);
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
 bool rtl92de_rx_query_desc(struct ieee80211_hw *hw,
 			   struct rtl_stats *status,
 			   struct ieee80211_rx_status *rx_status,

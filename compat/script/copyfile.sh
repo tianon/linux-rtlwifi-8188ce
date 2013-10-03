@@ -2,16 +2,16 @@
 #!/bin/bash
 
 #replace LINUX_VERSION_CODE with (KERNEL_VERSION(2,6,39)) for all the files of the directory "rtlwifi"
-find ../ -name '*.h' -print0 |xargs -0 sed -i 's/LINUX_VERSION_CODE/(KERNEL_VERSION(2,6,39))/g'
-find ../ -name '*.c' -print0 |xargs -0 sed -i 's/LINUX_VERSION_CODE/(KERNEL_VERSION(2,6,39))/g'
+find ../ -name '*.h' -print0 |xargs -0 sed -i 's/LINUX_VERSION_CODE/(KERNEL_VERSION(3,2,5))/g'
+find ../ -name '*.c' -print0 |xargs -0 sed -i 's/LINUX_VERSION_CODE/(KERNEL_VERSION(3,2,5))/g'
 
-src="./2.6.39-1"
+src="./3.2.5-1"
 des="../../../../.."
 
 files="config.mk Makefile scripts/driver-select scripts/unload.sh scripts/wlunload.sh"
 
 rtlwifi_dir=drivers/net/wireless/rtlwifi
-rtlwifi_files="Makefile Kconfig rtl8192ce/Makefile rtl8192de/Makefile rtl8192se/Makefile"
+rtlwifi_files="Makefile Kconfig rtl8188ee/Makefile rtl8192ce/Makefile rtl8192de/Makefile rtl8192se/Makefile"
 
 #backup files
 echo -e "\n------------------backup files-----------------"

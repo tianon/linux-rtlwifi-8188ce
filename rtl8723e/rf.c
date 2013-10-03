@@ -519,6 +519,6 @@ static bool _rtl8723e_phy_rf6052_config_parafile(struct ieee80211_hw *hw)
 
 	}
 
-	RT_TRACE(COMP_INIT, DBG_TRACE, ("<---\n"));
+	RT_TRACE(COMP_INIT, DBG_TRACE, ("\n"));
 	return rtstatus;
 }

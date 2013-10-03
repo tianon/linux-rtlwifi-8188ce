@@ -1153,7 +1153,7 @@ static void rtl92c_dm_txpower_tracking_callback_thermalmeter(struct ieee80211_hw
 			rtlpriv->dm.thermalvalue = thermalvalue;
 	}
 
-	RT_TRACE(COMP_POWER_TRACKING, DBG_LOUD, ("<===\n"));
+	RT_TRACE(COMP_POWER_TRACKING, DBG_LOUD, ("end\n"));
 
 }
 
@@ -1235,17 +1235,17 @@ void rtl92c_dm_refresh_rate_adaptive_mask(struct ieee80211_hw *hw)
 
 	if (is_hal_stop(rtlhal)) {
 		RT_TRACE(COMP_RATE, DBG_LOUD,
-			 ("<---- driver is going to unload\n"));
+			 (" driver is going to unload\n"));
 		return;
 	}
 
 	if (!rtlpriv->dm.b_useramask) {
 		RT_TRACE(COMP_RATE, DBG_LOUD,
-			 ("<---- driver does not control rate adaptive mask\n"));
+			 (" driver does not control rate adaptive mask\n"));
 		return;
 	}
 
-	if (mac->link_state == MAC80211_LINKED && 
+	if (mac->link_state == MAC80211_LINKED &&
 		mac->opmode == NL80211_IFTYPE_STATION) {
 
 		switch (p_ra->pre_ratr_state) {
@@ -1288,6 +1288,7 @@ void rtl92c_dm_refresh_rate_adaptive_mask(struct ieee80211_hw *hw)
 
 			rcu_read_lock();
 			sta = rtl_find_sta(hw, mac->bssid);
+			if (sta)
 			rtlpriv->cfg->ops->update_rate_tbl(hw, sta, p_ra->ratr_state);
 			rcu_read_unlock();
 
@@ -1483,6 +1484,9 @@ void rtl92c_dm_watchdog(struct ieee80211_hw *hw)
 				      (u8 *) (&b_fw_current_inpsmode));
 	rtlpriv->cfg->ops->get_hw_reg(hw, HW_VAR_FWLPS_RF_ON,
 				      (u8 *) (&b_fw_ps_awake));
+
+	if (ppsc->p2p_ps_info.p2p_ps_mode)
+		b_fw_ps_awake = false;
 
 	if ((ppsc->rfpwr_state == ERFON) && ((!b_fw_current_inpsmode) &&
 					     b_fw_ps_awake)
@@ -1690,7 +1694,7 @@ void rtl92c_dm_bt_coexist(struct ieee80211_hw *hw)
 
 		if ( b_wifi_connect_change || b_bt_state_change || b_rssi_state_change) {
 			u8 tmp1byte = 0;
-			if (IS_81xxC_VENDOR_UMC_B_CUT(rtlhal->version) 
+			if (IS_81xxC_VENDOR_UMC_B_CUT(rtlhal->version)
 				&& rtlpcipriv->bt_coexist.bt_coexistence) {
 			   tmp1byte |= BIT(5);
 			}

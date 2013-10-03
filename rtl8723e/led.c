@@ -52,12 +52,13 @@ void rtl8723e_sw_led_on(struct ieee80211_hw *hw, struct rtl_led *pled)
 		break;
 	case LED_PIN_LED0:
 		ledcfg = rtl_read_byte(rtlpriv, REG_LEDCFG2);
+		ledcfg &= ~BIT(6);
 		rtl_write_byte(rtlpriv,
 			       REG_LEDCFG2, (ledcfg & 0xf0) | BIT(5));
 		break;
 	case LED_PIN_LED1:
-		ledcfg = rtl_read_byte(rtlpriv, REG_LEDCFG1);			
-		rtl_write_byte(rtlpriv, REG_LEDCFG1, ledcfg & 0x10); 
+		ledcfg = rtl_read_byte(rtlpriv, REG_LEDCFG1);
+		rtl_write_byte(rtlpriv, REG_LEDCFG1, ledcfg & 0x10);
 		break;
 	default:
 		RT_TRACE(COMP_ERR, DBG_EMERG,
@@ -85,14 +86,16 @@ void rtl8723e_sw_led_off(struct ieee80211_hw *hw, struct rtl_led *pled)
 		ledcfg &= 0xf0;
 		if (pcipriv->ledctl.bled_opendrain == true) {
 			ledcfg &= 0x90; /* Set to software control. */
-			rtl_write_byte(rtlpriv, REG_LEDCFG2, (ledcfg|BIT(3)));				
+			rtl_write_byte(rtlpriv, REG_LEDCFG2, (ledcfg|BIT(3)));
 			ledcfg = rtl_read_byte(rtlpriv, REG_MAC_PINMUX_CFG);
 			ledcfg &= 0xFE;
 			rtl_write_byte(rtlpriv, REG_MAC_PINMUX_CFG, ledcfg);
 		}
-		else
+		else {
+			ledcfg &= ~BIT(6);
 			rtl_write_byte(rtlpriv, REG_LEDCFG2,
-				       (ledcfg | BIT(3) | BIT(5)));
+					(ledcfg | BIT(3) | BIT(5)));
+		}
 		break;
 	case LED_PIN_LED1:
 		ledcfg = rtl_read_byte(rtlpriv, REG_LEDCFG1);
@@ -150,7 +153,7 @@ void rtl8723e_led_control(struct ieee80211_hw *hw,
 	     ledaction == LED_CTL_POWER_ON)) {
 		return;
 	}
-	RT_TRACE(COMP_LED, DBG_LOUD, ("ledaction %d, \n", 
+	RT_TRACE(COMP_LED, DBG_LOUD, ("ledaction %d, \n",
 				ledaction));
 	_rtl8723e_sw_led_control(hw, ledaction);
 }

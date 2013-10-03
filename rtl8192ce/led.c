@@ -144,7 +144,7 @@ void rtl92ce_led_control(struct ieee80211_hw *hw,
 	     ledaction == LED_CTL_POWER_ON)) {
 		return;
 	}
-	RT_TRACE(COMP_LED, DBG_LOUD, ("ledaction %d, \n", 
+	RT_TRACE(COMP_LED, DBG_LOUD, ("ledaction %d, \n",
 				ledaction));
 	_rtl92ce_sw_led_control(hw, ledaction);
 }

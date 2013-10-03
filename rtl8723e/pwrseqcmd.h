@@ -3,7 +3,7 @@
 
 #include "../wifi.h"
 /*---------------------------------------------*/
-//3 The value of cmd: 4 bits
+/*The value of cmd: 4 bits */
 /*---------------------------------------------*/
 #define  PWR_CMD_READ 		0x00
 #define    PWR_CMD_WRITE	0x01

@@ -50,7 +50,15 @@ struct dev_pm_ops name = { \
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,39))
 #define RX_FLAG_MACTIME_MPDU RX_FLAG_TSFT
 #else
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+#define RX_FLAG_MACTIME_MPDU RX_FLAG_MACTIME_START
+#else
+#endif
 //#define NETDEV_TX_OK
+#endif
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
+#define IEEE80211_KEY_FLAG_SW_MGMT IEEE80211_KEY_FLAG_SW_MGMT_TX
 #endif
 
 struct ieee80211_mgmt_compat {

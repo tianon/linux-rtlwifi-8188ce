@@ -332,13 +332,25 @@ static void _rtl_init_mac80211(struct ieee80211_hw *hw)
 	    		IEEE80211_HW_PS_NULLFUNC_STACK |
 	    		/* IEEE80211_HW_SUPPORTS_DYNAMIC_PS | */
 			0;
-
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
 	hw->wiphy->interface_modes =
 	    BIT(NL80211_IFTYPE_AP) |
 	    BIT(NL80211_IFTYPE_STATION) |
 	    BIT(NL80211_IFTYPE_ADHOC) |
-	    BIT(NL80211_IFTYPE_MESH_POINT);
-
+	    BIT(NL80211_IFTYPE_MESH_POINT) |
+	    BIT(NL80211_IFTYPE_P2P_CLIENT) |
+	    BIT(NL80211_IFTYPE_P2P_GO);
+#else
+/*<delete in kernel end>*/
+	hw->wiphy->interface_modes =
+	    BIT(NL80211_IFTYPE_AP) |
+	    BIT(NL80211_IFTYPE_STATION) |
+	    BIT(NL80211_IFTYPE_ADHOC) |
+	    BIT(NL80211_IFTYPE_MESH_POINT) ;
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,39))
 	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
 #endif
@@ -495,7 +507,7 @@ int rtl_init_core(struct ieee80211_hw *hw)
 	spin_lock_init(&rtlpriv->locks.entry_list_lock);
 	spin_lock_init(&rtlpriv->locks.cck_and_rw_pagea_lock);
 	spin_lock_init(&rtlpriv->locks.check_sendpkt_lock);
-
+	spin_lock_init(&rtlpriv->locks.fw_ps_lock);
 	/* <5> init list */
 	INIT_LIST_HEAD(&rtlpriv->entry_list);
 
@@ -849,15 +861,19 @@ bool rtl_action_proc(struct ieee80211_hw *hw, struct sk_buff *skb, u8 is_tx)
 				struct rtl_tid_data *tid_data;
 				struct sk_buff *skb_delba = NULL;
 				struct ieee80211_rx_status rx_status = { 0 };
+
+				rcu_read_lock();
 				sta = rtl_find_sta(hw, hdr->addr3);
 				if (sta == NULL) {
 					RT_TRACE((COMP_SEND | COMP_RECV), DBG_EMERG,
 							("sta is NULL\n"));
+					rcu_read_unlock();
 					return true;
 				}
 
 				sta_entry = (struct rtl_sta_info *)sta->drv_priv;
 				if (!sta_entry) {
+					rcu_read_unlock();
 					return true;
 				}
 				capab = le16_to_cpu(mgmt->u.action.u.addba_req.capab);
@@ -880,6 +896,7 @@ bool rtl_action_proc(struct ieee80211_hw *hw, struct sk_buff *skb, u8 is_tx)
 						ieee80211_rx_irqsafe(hw, skb_delba);
 					}
 				}
+				rcu_read_unlock();
 			}
 			break;
 		case ACT_ADDBARSP:
@@ -1431,9 +1448,17 @@ int rtl_send_smps_action(struct ieee80211_hw *hw,
 		/* rtlpriv->cfg->ops->update_rate_tbl(hw, sta, 0); */
 
 		info->control.rates[0].idx = 0;
-		info->control.sta = sta;
 		info->band = hw->conf.channel->band;
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))
+		info->control.sta = sta;
 		rtlpriv->intf_ops->adapter_tx(hw, skb, &tcb_desc);
+#else
+/*<delete in kernel end>*/
+		rtlpriv->intf_ops->adapter_tx(hw, sta, skb, &tcb_desc);
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
 	}
 	return 1;
 

@@ -476,6 +476,10 @@ void rtl8723e_set_hw_reg(struct ieee80211_hw *hw, u8 variable, u8 *val)
 
 			break;
 		}
+	case HW_VAR_H2C_FW_P2P_PS_OFFLOAD:{
+		rtl8723e_set_p2p_ps_offload_cmd(hw,(*(u8 *) val));
+		break;
+	}
 	case HW_VAR_AID:{
 			u16 u2btmp;
 			u2btmp = rtl_read_word(rtlpriv, REG_BCN_PSR_RPT);
@@ -505,6 +509,40 @@ void rtl8723e_set_hw_reg(struct ieee80211_hw *hw, u8 variable, u8 *val)
 
 			break;
 
+		}
+	case HW_VAR_FW_LPS_ACTION:{
+			bool b_enter_fwlps = *((bool *) val);
+			u8 rpwm_val, fw_pwrmode;
+			bool b_fw_current_inps;
+
+			if (b_enter_fwlps) {
+					rpwm_val = 0x02;	/* RF off */
+					b_fw_current_inps = true;
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_FW_PSMODE_STATUS,
+							(u8 *) (&b_fw_current_inps));
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_H2C_FW_PWRMODE,
+							(u8 *) (&ppsc->fwctrl_psmode));
+
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_SET_RPWM,
+							(u8 *) (&rpwm_val));
+			} else {
+					rpwm_val = 0x0C;	/* RF on */
+					fw_pwrmode = FW_PS_ACTIVE_MODE;
+					b_fw_current_inps = false;
+					rtlpriv->cfg->ops->set_hw_reg(hw, HW_VAR_SET_RPWM,
+							(u8 *) (&rpwm_val));
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_H2C_FW_PWRMODE,
+							(u8 *) (&fw_pwrmode));
+
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_FW_PSMODE_STATUS,
+							(u8 *) (&b_fw_current_inps));
+			}
+			 break;
 		}
 	default:
 		RT_TRACE(COMP_ERR, DBG_EMERG, ("switch case not process \n"));
@@ -613,7 +651,7 @@ static bool _rtl8723e_llt_table_init(struct ieee80211_hw *hw)
 	if (true != status)
 		return status;
 
-	rtl_write_byte(rtlpriv, REG_CR, 0xff);	
+	rtl_write_byte(rtlpriv, REG_CR, 0xff);
 	ubyte = rtl_read_byte(rtlpriv, REG_RQPN + 3);
 	rtl_write_byte(rtlpriv, REG_RQPN + 3, ubyte | BIT(7));
 
@@ -1222,8 +1260,8 @@ static void _rtl8723e_poweroff_adapter(struct ieee80211_hw *hw)
 	/* 2. 0x1F[7:0] = 0 */
 	/* turn off RF */
 	rtl_write_byte(rtlpriv, REG_RF_CTRL, 0x00);
-	if ((rtl_read_byte(rtlpriv, REG_MCUFWDL) & BIT(7)) && 
-		rtlhal->bfw_ready ) {	
+	if ((rtl_read_byte(rtlpriv, REG_MCUFWDL) & BIT(7)) &&
+		rtlhal->bfw_ready ) {
 		rtl8723e_firmware_selfreset(hw);
 	}
 
@@ -1841,6 +1879,7 @@ static void _rtl8723e_hal_customized_behavior(struct ieee80211_hw *hw)
 	struct rtl_pci_priv *pcipriv = rtl_pcipriv(hw);
 	struct rtl_hal *rtlhal = rtl_hal(rtl_priv(hw));
 
+	pcipriv->ledctl.bled_opendrain = true;
 	switch (rtlhal->oem_id) {
 	case RT_CID_819x_HP:
 		pcipriv->ledctl.bled_opendrain = true;
@@ -2379,7 +2418,7 @@ void rtl8723e_bt_var_init(struct ieee80211_hw *hw)
 	rtlpcipriv->bt_coexist.bt_radio_shared_type =
 					rtlpcipriv->bt_coexist.eeprom_bt_radio_shared;
 
-	RT_TRACE(COMP_BT_COEXIST, DBG_TRACE, 
+	RT_TRACE(COMP_BT_COEXIST, DBG_TRACE,
 		("BT Coexistance = 0x%x\n", rtlpcipriv->bt_coexist.bt_coexistence));
 
 	if(rtlpcipriv->bt_coexist.bt_coexistence) {
@@ -2397,7 +2436,7 @@ void rtl8723e_bt_var_init(struct ieee80211_hw *hw)
 			RT_TRACE(COMP_BT_COEXIST, DBG_TRACE,
 				("BlueTooth BT_Ant_Num = Antx1\n"));
 		}
-		
+
 		switch (rtlpcipriv->bt_coexist.bt_coexist_type) {
 			case BT_2WIRE:
 				RT_TRACE(COMP_BT_COEXIST, DBG_TRACE,
@@ -2430,7 +2469,7 @@ void rtl8723e_bt_var_init(struct ieee80211_hw *hw)
 		}
 		RT_TRACE(COMP_BT_COEXIST, DBG_TRACE,
 			("BlueTooth BT_Ant_isolation = %d\n",
-			rtlpcipriv->bt_coexist.bt_ant_isolation));		
+			rtlpcipriv->bt_coexist.bt_ant_isolation));
 		RT_TRACE(COMP_BT_COEXIST, DBG_TRACE,
 			("BT_RadioSharedType = 0x%x\n",
 			rtlpcipriv->bt_coexist.bt_radio_shared_type));

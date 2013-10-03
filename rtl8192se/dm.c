@@ -36,37 +36,37 @@
 
 struct dig_t digtable;
 static const u32 edca_setting_dl[PEER_MAX] = {
-	0xa44f, 	/* 0 UNKNOWN */	
+	0xa44f, 	/* 0 UNKNOWN */
  	0x5ea44f,	/* 1 REALTEK_90 */
-	0x5ea44f,	/* 2 REALTEK_92SE */		
+	0x5ea44f,	/* 2 REALTEK_92SE */
 	0xa630,		/* 3 BROAD	*/
 	0xa44f,		/* 4 RAL */
 	0xa630,		/* 5 ATH */
 	0xa630,		/* 6 CISCO */
 	0xa42b,		/* 7 MARV */
-};	
+};
 
 static const u32 edca_setting_dl_gmode[PEER_MAX] = {
-	0x4322,		/* 0 UNKNOWN */		
+	0x4322,		/* 0 UNKNOWN */
 	0xa44f,		/* 1 REALTEK_90 */
 	0x5ea44f,	/* 2 REALTEK_92SE */
 	0xa42b,		/* 3 BROAD */
-	0x5e4322,	/* 4 RAL */	
+	0x5e4322,	/* 4 RAL */
 	0x4322,		/* 5 ATH */
 	0xa430,		/* 6 CISCO */
-	0x5ea44f,	/* 7 MARV */	
+	0x5ea44f,	/* 7 MARV */
 };
 
 static const u32 edca_setting_ul[PEER_MAX] = {
-	0x5e4322, 	/* 0 UNKNOWN */	
-	0xa44f,		/* 1 REALTEK_90 */	
-	0x5ea44f,	/* 2 REALTEK_92SE */		
+	0x5e4322, 	/* 0 UNKNOWN */
+	0xa44f,		/* 1 REALTEK_90 */
+	0x5ea44f,	/* 2 REALTEK_92SE */
 	0x5ea322, 	/* 3 BROAD */
 	0x5ea422,	/* 4 RAL */
 	0x5ea322, 	/* 5 ATH */
 	0x3ea44f,	/* 6 CISCO */
-	0x5ea44f,	/* 7 MARV */	
-};	
+	0x5ea44f,	/* 7 MARV */
+};
 
 static void _rtl92s_dm_check_edca_turbo(struct ieee80211_hw *hw)
 {
@@ -94,7 +94,7 @@ static void _rtl92s_dm_check_edca_turbo(struct ieee80211_hw *hw)
 
 		if(rtlpriv->phy.rf_type == RF_1T2R) {
 			if(cur_txok_cnt > 4 * cur_rxok_cnt) {/* Uplink TP is present. */
-				if(rtlpriv->dm.bis_cur_rdlstate || 
+				if(rtlpriv->dm.bis_cur_rdlstate ||
 					!rtlpriv->dm.bcurrent_turbo_edca) {
 					rtl_write_dword(rtlpriv, EDCAPARA_BE, edca_be_ul);
 					rtlpriv->dm.bis_cur_rdlstate = false;
@@ -167,13 +167,13 @@ static void _rtl92s_dm_txpowertracking_callback_thermalmeter(
 			rtl92s_phy_set_fw_cmd(hw, FW_CMD_TXPWR_TRACK_THERMAL);
 		} else {
 			fw_cmd = (FW_TXPWR_TRACK_THERMAL |
-				(rtlpriv->efuse.thermalmeter[0] << 8) | 
+				(rtlpriv->efuse.thermalmeter[0] << 8) |
 				(thermalvalue << 16));
-			
+
 			RT_TRACE(COMP_POWER_TRACKING, DBG_LOUD,
 				("Write to FW Thermal Val = 0x%x\n", fw_cmd));
-			
-			rtl_write_dword(rtlpriv, WFM5, fw_cmd); 
+
+			rtl_write_dword(rtlpriv, WFM5, fw_cmd);
 			rtl92s_phy_chk_fwcmd_iodone(hw);
 		}
 	}
@@ -289,9 +289,10 @@ static void _rtl92s_dm_refresh_rateadaptive_mask(struct ieee80211_hw *hw)
 
 			rcu_read_lock();
 			sta = rtl_find_sta(hw, mac->bssid);
+			if (sta)
 			rtlpriv->cfg->ops->update_rate_tbl(hw, sta, p_ra->ratr_state);
 			rcu_read_unlock();
-			
+
 			p_ra->pre_ratr_state = p_ra->ratr_state;
 		}
 	}
@@ -474,7 +475,7 @@ static void _rtl92s_dm_initial_gain_sta_beforeconnect(struct ieee80211_hw *hw)
 		/* disconnected -> connected or connected ->
 		 * disconnected or beforeconnect->(dis)connected */
 	} else {
-		// Enable FW DIG
+		/* Enable FW DIG */
 		digtable.dig_ext_port_stage = DIG_EXT_PORT_STAGE_MAX;
 		rtl92s_phy_set_fw_cmd(hw, FW_CMD_DIG_ENABLE);
 

@@ -92,10 +92,48 @@ Change history =
     2. add BT-Coexist for 8723AE.
     3. to support 3.1
 
-Release date = 2012-08-09
+Release date = 2012-10-19
 Operating system release = Ubuntu 12.04
-Kernel version = 2.6.35-3.2
-Release driver version = 0007.0809.2012
+Kernel version = 3.2.0-23
+Release driver version = 0007.1019.2012
 Change history =
-    1. Fix camera hang when wifi on
-    3. to support 3.4
+    1. support RTL8188EE
+
+Release date = 2012-11-15
+Operating system release = Ubuntu 12.04
+Kernel version = 3.2.0-23
+Release driver version = 0008.1115.2012
+Change history =
+    1. modified conflict of old version for 88ce
+
+Release date = 2012-11-29
+Operating system release = Ubuntu 12.04
+Kernel version = 3.2.0-23
+Release driver version = 0009.1129.2012
+Change history =
+    1. add antenna diversity for 8188ee
+    2. support HP ID
+
+Release date = 2013-01-09
+Operating system release = Ubuntu 12.10
+Kernel version = 3.5.0
+Release driver version = 0010.0109.2013
+Change history =
+	1.support kernel 3.5.0
+
+Release date = 2013-01-28
+Operating system release = Ubuntu 12.10
+Kernel version = 3.8.0-rc2
+Release driver version = 0011.0128.2013
+Change history =
+	1.supported kernel 3.7 and kernel 3.8 rc2
+	2.fixed compile error in kernel 2.6.35
+
+Release date = 2013-02-07
+Operating system release = Ubuntu 12.10
+Kernel version = 3.8.0-rc2
+Release driver version = 0012.0207.2013
+Change history =
+        1.fixed 8723ae and 8188ee led
+	2.fiexd compile error in kernel 3.7.0 to 3.7.6
+	3.to support kernel 3.7.0 to 3.7.6 and kernel 3.8 rc2

@@ -765,17 +765,17 @@ void rtl92c_dm_refresh_rate_adaptive_mask(struct ieee80211_hw *hw)
 
 	if (is_hal_stop(rtlhal)) {
 		RT_TRACE(COMP_RATE, DBG_LOUD,
-			 ("<---- driver is going to unload\n"));
+			 (" driver is going to unload\n"));
 		return;
 	}
 
 	if (!rtlpriv->dm.b_useramask) {
 		RT_TRACE(COMP_RATE, DBG_LOUD,
-			 ("<---- driver does not control rate adaptive mask\n"));
+			 (" driver does not control rate adaptive mask\n"));
 		return;
 	}
 
-	if (mac->link_state == MAC80211_LINKED && 
+	if (mac->link_state == MAC80211_LINKED &&
 		mac->opmode == NL80211_IFTYPE_STATION) {
 
 		switch (p_ra->pre_ratr_state) {
@@ -818,6 +818,7 @@ void rtl92c_dm_refresh_rate_adaptive_mask(struct ieee80211_hw *hw)
 
 			rcu_read_lock();
 			sta = rtl_find_sta(hw, mac->bssid);
+			if (sta)
 			rtlpriv->cfg->ops->update_rate_tbl(hw, sta, p_ra->ratr_state);
 			rcu_read_unlock();
 
@@ -923,7 +924,7 @@ void rtl8723e_dm_rf_saving(struct ieee80211_hw *hw, u8 bforce_in_normal)
 	if (dm_pstable.pre_rfstate != dm_pstable.cur_rfstate) {
 		if (dm_pstable.cur_rfstate == RF_SAVE) {
 
-			rtl_set_bbreg(hw, RFPGA0_XCD_RFINTERFACESW  , BIT(5), 0x1); 
+			rtl_set_bbreg(hw, RFPGA0_XCD_RFINTERFACESW  , BIT(5), 0x1);
 			rtl_set_bbreg(hw, RFPGA0_XCD_RFINTERFACESW,
 				      0x1C0000, 0x2);
 			rtl_set_bbreg(hw, ROFDM0_AGCPARAMETER1, BIT(3), 0);
@@ -1013,7 +1014,10 @@ void rtl8723e_dm_watchdog(struct ieee80211_hw *hw)
 	rtlpriv->cfg->ops->get_hw_reg(hw, HW_VAR_FWLPS_RF_ON,
 				      (u8 *) (&b_fw_ps_awake));
 
-	if ((ppsc->rfpwr_state == ERFON) 
+	if (ppsc->p2p_ps_info.p2p_ps_mode)
+		b_fw_ps_awake = false;
+
+	if ((ppsc->rfpwr_state == ERFON)
 		&& ((!b_fw_current_inpsmode) && b_fw_ps_awake)
 		&& (!ppsc->rfchange_inprogress)) {
 		rtl8723e_dm_pwdb_monitor(hw);
@@ -1035,9 +1039,9 @@ void rtl8723e_dm_init_bt_coexist(struct ieee80211_hw *hw)
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_pci_priv *rtlpcipriv = rtl_pcipriv(hw);
 
-	rtlpcipriv->bt_coexist.bt_rfreg_origin_1e 
+	rtlpcipriv->bt_coexist.bt_rfreg_origin_1e
 		= rtl_get_rfreg(hw, (enum radio_path)0, RF_RCK1, 0xfffff);
-	rtlpcipriv->bt_coexist.bt_rfreg_origin_1f 
+	rtlpcipriv->bt_coexist.bt_rfreg_origin_1f
 		= rtl_get_rfreg(hw, (enum radio_path)0, RF_RCK2, 0xf0);
 
 	rtlpcipriv->bt_coexist.current_state = 0;
@@ -1050,7 +1054,7 @@ void rtl8723e_dm_init_bt_coexist(struct ieee80211_hw *hw)
 	rtl_write_byte(rtlpriv, 0x76e, 0x4);
 	rtl_write_byte(rtlpriv, 0x778, 0x3);
 	rtl_write_byte(rtlpriv, 0x40, 0x20);
-	
+
 	rtlpcipriv->bt_coexist.b_init_set = true;
 }
 
@@ -1066,7 +1070,7 @@ void rtl8723e_dm_bt_coexist(struct ieee80211_hw *hw)
 	}
 
 	if (!rtlpcipriv->bt_coexist.b_init_set) {
-		RT_TRACE(COMP_BT_COEXIST, DBG_LOUD, 
+		RT_TRACE(COMP_BT_COEXIST, DBG_LOUD,
 			("[DM][BT], rtl8723e_dm_bt_coexist()\n"));
 		rtl8723e_dm_init_bt_coexist(hw);
 	}
@@ -1075,6 +1079,6 @@ void rtl8723e_dm_bt_coexist(struct ieee80211_hw *hw)
 	RT_TRACE(COMP_BT_COEXIST, DBG_LOUD,
 		("[DM][BT], 0x40 is 0x%x", tmp_byte));
 	RT_TRACE(COMP_BT_COEXIST, DBG_DMESG, ("[DM][BT], bt_dm_coexist start"));
-	rtl8723e_dm_bt_coexist_8723(hw);	
+	rtl8723e_dm_bt_coexist_8723(hw);
 }
 

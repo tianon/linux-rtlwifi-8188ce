@@ -63,9 +63,9 @@
 #define REG_LEDCFG3					0x004F
 #define REG_FSIMR					0x0050
 #define REG_FSISR					0x0054
-#define REG_GPIO_PIN_CTRL_2			0x0060 
-#define REG_GPIO_IO_SEL_2			0x0062 
-#define REG_MULTI_FUNC_CTRL			0x0068 
+#define REG_GPIO_PIN_CTRL_2			0x0060
+#define REG_GPIO_IO_SEL_2			0x0062
+#define REG_MULTI_FUNC_CTRL			0x0068
 
 
 #define REG_MCUFWDL					0x0080
@@ -82,7 +82,7 @@
 #define REG_PCIE_MIO_INTF			0x00E4
 #define REG_PCIE_MIO_INTD			0x00E8
 #define REG_SYS_CFG					0x00F0
-#define REG_GPIO_OUTSTS				0x00F4	
+#define REG_GPIO_OUTSTS				0x00F4
 
 
 #define REG_CR						0x0100
@@ -552,18 +552,18 @@
 #define	PHIMR_BCNDMAINT_E				BIT(14)
 #define	PHIMR_ATIMEND_E				BIT(13)
 #define	PHIMR_ATIM_CTW_END			BIT(12)
-#define	PHIMR_HISRE_IND				BIT(11)	
+#define	PHIMR_HISRE_IND				BIT(11)
 #define	PHIMR_C2HCMD					BIT(10)
 #define	PHIMR_CPWM2					BIT(9)
 #define	PHIMR_CPWM					BIT(8)
-#define	PHIMR_HIGHDOK					BIT(7)		
-#define	PHIMR_MGNTDOK					BIT(6)		
-#define	PHIMR_BKDOK					BIT(5)		
-#define	PHIMR_BEDOK					BIT(4)		
-#define	PHIMR_VIDOK					BIT(3)		
-#define	PHIMR_VODOK					BIT(2)		
-#define	PHIMR_RDU						BIT(1)		
-#define	PHIMR_ROK						BIT(0)		
+#define	PHIMR_HIGHDOK					BIT(7)
+#define	PHIMR_MGNTDOK					BIT(6)
+#define	PHIMR_BKDOK					BIT(5)
+#define	PHIMR_BEDOK					BIT(4)
+#define	PHIMR_VIDOK					BIT(3)
+#define	PHIMR_VODOK					BIT(2)
+#define	PHIMR_RDU						BIT(1)
+#define	PHIMR_ROK						BIT(0)
 
 /* PCIE Host Interrupt Status Extension bit */
 #define	PHIMR_BCNDMAINT7				BIT(23)
@@ -583,8 +583,8 @@
 #define	PHIMR_OCPINT					BIT(1)
 
 
-#define	HWSET_MAX_SIZE				256	
-#define EFUSE_MAX_SECTION			32	
+#define	HWSET_MAX_SIZE				256
+#define EFUSE_MAX_SECTION			32
 #define EFUSE_REAL_CONTENT_LEN			512
 #define EFUSE_OOB_PROTECT_BYTES			15
 

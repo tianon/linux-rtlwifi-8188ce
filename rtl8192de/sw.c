@@ -188,7 +188,16 @@ int rtl92d_init_sw_vars(struct ieee80211_hw *hw)
 	release_firmware(firmware);
 
 	/* for early mode */
-	rtlpriv->rtlhal.b_earlymode_eanble = true;
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))	
+	rtlpriv->rtlhal.b_earlymode_enable =true;
+#else
+/*<delete in kernel end>*/
+	rtlpriv->rtlhal.b_earlymode_enable =false;
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
+	rtlpriv->rtlhal.max_earlymode_num = 5;
 	for (tid = 0; tid < 8; tid++)
 		skb_queue_head_init(&rtlpriv->mac80211.skb_waitq[tid]);
 	return 0;

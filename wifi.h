@@ -95,8 +95,36 @@
 #define	CHANNEL_GROUP_MAX_5G		9
 #define CHANNEL_MAX_NUMBER_2G		14
 #define AVG_THERMAL_NUM			8
+#define AVG_THERMAL_NUM_88E		4
 #define MAX_TID_COUNT			9
 #define MAX_NUM_RATES			264
+
+/*for 88E use*/
+/*It must always set to 4, otherwise read efuse table secquence will be wrong.*/
+#define 	MAX_TX_COUNT				4
+#define	MAX_RF_PATH	4
+#define	MAX_CHNL_GROUP_24G		6 
+#define	MAX_CHNL_GROUP_5G		14 
+
+
+struct txpower_info_2g {
+	u8 index_cck_base[MAX_RF_PATH][MAX_CHNL_GROUP_24G];
+	u8 index_bw40_base[MAX_RF_PATH][MAX_CHNL_GROUP_24G];
+	/*If only one tx, only BW20 and OFDM are used.*/
+	u8 cck_diff[MAX_RF_PATH][MAX_TX_COUNT];	
+	u8 ofdm_diff[MAX_RF_PATH][MAX_TX_COUNT];
+	u8 bw20_diff[MAX_RF_PATH][MAX_TX_COUNT];
+	u8 bw40_diff[MAX_RF_PATH][MAX_TX_COUNT];
+};
+
+struct txpower_info_5g {
+	u8 index_bw40_base[MAX_RF_PATH][MAX_CHNL_GROUP_5G];
+	/*If only one tx, only BW20, OFDM, BW80 and BW160 are used.*/
+	u8 ofdm_diff[MAX_RF_PATH][MAX_TX_COUNT];
+	u8 bw20_diff[MAX_RF_PATH][MAX_TX_COUNT];
+	u8 bw40_diff[MAX_RF_PATH][MAX_TX_COUNT];
+};
+
 
 /* for early mode */
 #define EM_HDR_LEN				8
@@ -136,7 +164,7 @@ enum hardware_type {
 	HARDWARE_TYPE_RTL8192DE,
 	HARDWARE_TYPE_RTL8192DU,
 	HARDWARE_TYPE_RTL8723AE,
-
+	HARDWARE_TYPE_RTL8188EE,
 	/* keep it last */
 	HARDWARE_TYPE_NUM
 };
@@ -244,7 +272,10 @@ enum hw_variables {
 	HW_VAR_SET_RPWM,
 	HW_VAR_H2C_FW_PWRMODE,
 	HW_VAR_H2C_FW_JOINBSSRPT,
+	HW_VAR_H2C_FW_P2P_PS_OFFLOAD,
 	HW_VAR_FW_PSMODE_STATUS,
+	HW_VAR_RESUME_CLK_ON,
+	HW_VAR_FW_LPS_ACTION,
 	HW_VAR_1X1_RECV_COMBINE,
 	HW_VAR_STOP_SEND_BEACON,
 	HW_VAR_TSF_TIMER,
@@ -270,7 +301,8 @@ enum hw_variables {
 	HW_VAR_INT_MIGRATION,
 	HW_VAR_INT_AC,
 	HW_VAR_RF_TIMING,
-
+	
+	HAL_DEF_WOWLAN,
 	HW_VAR_MRC,
 };
 
@@ -388,7 +420,7 @@ enum rtl_var_map {
 	EFUSE_MAX_SECTION_MAP,
 	EFUSE_REAL_CONTENT_SIZE,
 	EFUSE_OOB_PROTECT_BYTES_LEN,
-
+	EFUSE_ACCESS,	
 	/*CAM map */
 	RWCAM,
 	WCAMI,
@@ -586,6 +618,8 @@ enum rt_polarity_ctl {
 	RT_POLARITY_LOW_ACT = 0,
 	RT_POLARITY_HIGH_ACT = 1,	
 };
+
+
 struct octet_string {
 	u8 *octet;
 	u16 length;
@@ -670,6 +704,7 @@ struct rtl_sta_info {
 	u8 ratr_index;
 	u8 wireless_mode;
 	u8 mimo_ps;
+	u8 mac_addr[6];
 	struct rtl_tid_data tids[MAX_TID_COUNT];
 
 	/* just used for ap adhoc or mesh*/
@@ -719,6 +754,11 @@ struct false_alarm_statistics {
 	u32 cnt_ofdm_fail;
 	u32 cnt_cck_fail;
 	u32 cnt_all;
+	u32 cnt_ofdm_cca;
+	u32 cnt_cck_cca;
+	u32 cnt_cca_all;
+	u32 cnt_bw_usc;
+	u32 cnt_bw_lsc;
 };
 
 struct init_gain {
@@ -803,6 +843,55 @@ struct rtl_rfkill {
 	bool rfkill_state;	/*0 is off, 1 is on */
 };
 
+/*for P2P PS**/
+#define	P2P_MAX_NOA_NUM		2
+
+enum p2p_role {
+	P2P_ROLE_DISABLE = 0,
+	P2P_ROLE_DEVICE = 1,
+	P2P_ROLE_CLIENT = 2,
+	P2P_ROLE_GO = 3	
+};
+
+enum p2p_ps_state {
+	P2P_PS_DISABLE = 0,
+	P2P_PS_ENABLE = 1,
+	P2P_PS_SCAN = 2,
+	P2P_PS_SCAN_DONE = 3,
+	P2P_PS_ALLSTASLEEP = 4, // for P2P GO
+};
+
+enum p2p_ps_mode {
+	P2P_PS_NONE = 0,
+	P2P_PS_CTWINDOW = 1,
+	P2P_PS_NOA	 = 2,
+	P2P_PS_MIX = 3, // CTWindow and NoA
+};
+
+struct rtl_p2p_ps_info {
+	enum p2p_ps_mode p2p_ps_mode; /* indicate p2p ps mode */
+	enum p2p_ps_state p2p_ps_state; /*  indicate p2p ps state */
+	u8 noa_index; /*  Identifies and instance of Notice of Absence timing. */
+	u8 ctwindow; /*  Client traffic window. A period of time in TU after TBTT. */
+	u8 opp_ps; /*  opportunistic power save. */
+	u8 noa_num; /*  number of NoA descriptor in P2P IE. */
+	u8 noa_count_type[P2P_MAX_NOA_NUM]; /*  Count for owner, Type of client. */
+	u32 noa_duration[P2P_MAX_NOA_NUM]; /*  Max duration for owner, preferred or min acceptable duration for client. */
+	u32 noa_interval[P2P_MAX_NOA_NUM]; /*  Length of interval for owner, preferred or max acceptable interval of client. */
+	u32 noa_start_time[P2P_MAX_NOA_NUM]; /*  schedule expressed in terms of the lower 4 bytes of the TSF timer. */
+};
+
+ struct p2p_ps_offload_t {
+	u8 Offload_En:1;
+	u8 role:1; /* 1: Owner, 0: Client */
+	u8 CTWindow_En:1;
+	u8 NoA0_En:1;
+	u8 NoA1_En:1;
+	u8 AllStaSleep:1;
+	u8 discovery:1;
+	u8 reserved:1;
+};
+ 
 #define IQK_MATRIX_REG_NUM	8
 #define IQK_MATRIX_SETTINGS_NUM	(1 + 24 + 21)
 struct iqk_matrix_regs {
@@ -860,7 +949,9 @@ struct rtl_phy {
 	/* the current Tx power level */
 	u8 cur_cck_txpwridx;
 	u8 cur_ofdm24g_txpwridx;
-
+	u8 cur_bw20_txpwridx;
+	u8 cur_bw40_txpwridx;
+	
 	u32 rfreg_chnlval[2];
 	bool b_apk_done;
 	u32 reg_rf3c[2];	/* pathA / pathB  */
@@ -923,13 +1014,16 @@ struct rtl_mac {
 	int n_bitrates;
 
 	bool offchan_deley;
+	u8 p2p;	/*using p2p role*/
+	bool p2p_in_use;
 
 	/*filters */
 	u32 rx_conf;
 
 	bool act_scanning;
 	u8 cnt_after_linked;
-
+	bool skip_scan;
+	
 	/* early mode */
 	/* skb wait queue */
 	struct sk_buff_head skb_waitq[MAX_TID_COUNT];
@@ -953,7 +1047,8 @@ struct rtl_mac {
 	u8 retry_short;
 	u8 retry_long;
 	u16 assoc_id;
-
+	bool bhiddenssid;
+	
 	/*IBSS*/
 	int beacon_interval;
 
@@ -976,6 +1071,7 @@ struct rtl_hal {
 	bool bfirst_init;
 	bool being_init_adapter;
 	bool b_bbrf_ready;
+	bool b_mac_func_enable;
 
 	enum intf_type interface;
 	u16 hw_type;		/*92c or 92d or 92s and so on */
@@ -983,6 +1079,7 @@ struct rtl_hal {
 	u8 oem_id;
 	u32 version;		/*version of chip */
 	u8 state;		/*stop 0, start 1 */
+	u8 boad_type;
 
 	/*firmware */
 	u32 fwsize;
@@ -992,6 +1089,7 @@ struct rtl_hal {
 	bool b_h2c_setinprogress;
 	u8 last_hmeboxnum;
 	bool bfw_ready;
+
 	/*Reserve page start offset except beacon in TxQ. */
 	u8 fw_rsvdpage_startoffset;
 	u8 h2c_txcmd_seq;
@@ -1002,6 +1100,10 @@ struct rtl_hal {
 	bool set_fwcmd_inprogress;
 	u8 current_fwcmd_io;
 
+	bool bfw_clk_change_in_progress;
+	bool ballow_sw_to_change_hwclc;
+	u8 fw_ps_state;
+	 struct p2p_ps_offload_t p2p_ps_offload;
 	/**/
 	bool driver_going2unload;
 
@@ -1017,7 +1119,8 @@ struct rtl_hal {
 	u32 interfaceindex;
 	/* just for DulMac S3S4 */
 	u8 macphyctl_reg;
-	bool b_earlymode_eanble;
+	bool b_earlymode_enable;
+	u8 max_earlymode_num;
 	/* Dul mac*/
 	bool during_mac0init_radiob;
 	bool during_mac1init_radioa;
@@ -1100,6 +1203,29 @@ struct rtl_pstbl {
 
 };
 
+#define ASSOCIATE_ENTRY_NUM	32+1
+
+struct fast_ant_trainning{
+	u8	bssid[6];
+	u8	antsel_rx_keep_0;
+	u8	antsel_rx_keep_1;
+	u8	antsel_rx_keep_2;
+	u32	ant_sum_rssi[7];
+	u32	ant_rssi_cnt[7];
+	u32	ant_ave_rssi[7];
+	u8	fat_state;
+	u32	train_idx;
+	u8	antsel_a[ASSOCIATE_ENTRY_NUM];
+	u8	antsel_b[ASSOCIATE_ENTRY_NUM];
+	u8	antsel_c[ASSOCIATE_ENTRY_NUM];
+	u32	main_ant_sum[ASSOCIATE_ENTRY_NUM];
+	u32	aux_ant_sum[ASSOCIATE_ENTRY_NUM];
+	u32	main_ant_cnt[ASSOCIATE_ENTRY_NUM];
+	u32	aux_ant_cnt[ASSOCIATE_ENTRY_NUM];
+	u8	rx_idle_ant;
+	bool	b_becomelinked;
+};
+
 struct rtl_dm {
 	/*PHY status for DM */
 	long entry_min_undecoratedsmoothed_pwdb;
@@ -1136,13 +1262,28 @@ struct rtl_dm {
 	bool bdisable_tx_int;
 	char ofdm_index[2];
 	char cck_index;
+	char	delta_power_index;
+	char	delta_power_index_last;
+	char power_index_offset;
+	
+	/*88e tx power tracking*/
+	u8	bb_swing_idx_ofdm[2];
+	u8	bb_swing_idx_ofdm_current;
+	u8	bb_swing_idx_ofdm_base;
+	bool	bb_swing_flag_Ofdm;
+	u8	bb_swing_idx_cck;
+	u8	bb_swing_idx_cck_current;
+	u8	bb_swing_idx_cck_base;
+	bool	bb_swing_flag_cck;
 
+	
 	/* DMSP */
 	bool supp_phymode_switch;
 
 	/* DulMac */
 	struct rtl_dig dm_digtable;
 	struct rtl_pstbl dm_pstable;
+	struct fast_ant_trainning fat_table;
 };
 
 #define	EFUSE_MAX_LOGICAL_SIZE		256
@@ -1173,7 +1314,11 @@ struct rtl_efuse {
 	u8 eeprom_version;
 
 	u8 dev_addr[6];
-
+	u8 board_type;
+	u8 wowlan_enable;
+	u8 antenna_div_cfg;
+	u8 antenna_div_type;
+	
 	bool b_txpwr_fromeprom;
 	u8 eeprom_crystalcap;
 	u8 eeprom_tssi[2];
@@ -1227,7 +1372,6 @@ struct rtl_ps_ctl {
 	bool rfchange_inprogress;
 	bool b_swrf_processing;
 	bool b_hwradiooff;
-
 	/*
 	 * just for PCIE ASPM
 	 * If it supports ASPM, Offset[560h] = 0x40,
@@ -1247,7 +1391,8 @@ struct rtl_ps_ctl {
 	bool b_fw_current_inpsmode;
 	u8 reg_max_lps_awakeintvl;
 	bool report_linked;
-
+	bool b_low_power_enable;/*for 32k*/
+	
 	/*for IPS */
 	bool b_inactiveps;
 
@@ -1278,6 +1423,11 @@ struct rtl_ps_ctl {
 	unsigned long last_beacon;
 	unsigned long last_action;
 	unsigned long last_slept;
+
+	/*For P2P PS */
+	struct rtl_p2p_ps_info p2p_ps_info;
+	u8 pwr_mode;
+	u8 smart_ps;
 };
 
 struct rtl_stats {
@@ -1328,6 +1478,13 @@ struct rtl_stats {
 	bool b_packet_toself;
 	bool b_packet_beacon;	/*for rssi */
 	char cck_adc_pwdb[4];	/*for rx path selection */
+
+	u8 packet_report_type;
+
+	u32 macid;
+	u8 wake_match;
+	u32 bt_rx_rssi_percentage;
+	u32 macid_valid_entry[2];
 };
 
 struct rt_link_detect {
@@ -1382,8 +1539,8 @@ struct rtl_tcb_desc {
 	/* early mode */
 	u8 empkt_num;
 	/* The max value by HW */
-	u32 empkt_len[5];
-
+	u32 empkt_len[10];
+	bool btx_enable_sw_calc_duration;
 	/* used for hal construct pkt,
 	 * we may set desc when tx */
 	u8 self_desc;
@@ -1429,6 +1586,13 @@ struct rtl_hal_ops {
 	void (*fill_tx_desc) (struct ieee80211_hw * hw,
 			      struct ieee80211_hdr * hdr, u8 * pdesc_tx,
 			      struct ieee80211_tx_info * info,
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
+/*<delete in kernel end>*/
+			      struct ieee80211_sta *sta,
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
 			      struct sk_buff * skb, u8 hw_queue,
 			      struct rtl_tcb_desc *ptcb_desc);
 	void (*fill_tx_cmddesc) (struct ieee80211_hw * hw, u8 * pdesc,
@@ -1480,11 +1644,32 @@ struct rtl_intf_ops {
 	bool (*check_buddy_priv)(struct ieee80211_hw *hw,
 			struct rtl_priv **buddy_priv);
 
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))
 	int (*adapter_tx) (struct ieee80211_hw * hw, struct sk_buff * skb,
 			struct rtl_tcb_desc *ptcb_desc);
+#else
+/*<delete in kernel end>*/
+	int (*adapter_tx) (struct ieee80211_hw *hw,
+			   struct ieee80211_sta *sta,
+			   struct sk_buff *skb,
+			   struct rtl_tcb_desc *ptcb_desc);
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
 	void (*flush)(struct ieee80211_hw *hw, bool drop);
 	int (*reset_trx_ring) (struct ieee80211_hw * hw);
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))
 	bool (*waitq_insert) (struct ieee80211_hw *hw, struct sk_buff *skb);
+#else
+/*<delete in kernel end>*/
+	bool (*waitq_insert) (struct ieee80211_hw *hw,
+			      struct ieee80211_sta *sta,
+			      struct sk_buff *skb);
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
 
 	/*pci */
 	void (*disable_aspm) (struct ieee80211_hw * hw);
@@ -1534,7 +1719,10 @@ struct rtl_locks {
 	spinlock_t lps_lock;
 	spinlock_t waitq_lock;
 	spinlock_t entry_list_lock;
-
+	
+	/*FW clock change */
+	spinlock_t fw_ps_lock;
+	
 	/*Dul mac*/
 	spinlock_t cck_and_rw_pagea_lock;
 
@@ -1548,7 +1736,8 @@ struct rtl_works {
 	/*timer */
 	struct timer_list watchdog_timer;
 	struct timer_list dualmac_easyconcurrent_retrytimer;
-
+	struct timer_list fw_clockoff_timer;
+	struct timer_list fast_antenna_trainning_timer;
 	/*task */
 	struct tasklet_struct irq_tasklet;
 	struct tasklet_struct irq_prepare_bcn_tasklet;
@@ -1669,8 +1858,8 @@ struct rtl_priv {
 #define rtl_hal(rtlpriv)	(&((rtlpriv)->rtlhal))
 #define rtl_efuse(rtlpriv)	(&((rtlpriv)->efuse))
 #define rtl_psc(rtlpriv)	(&((rtlpriv)->psc))
-
-
+#define rtl_sec(rtlpriv) 	(&((rtlpriv)->sec))
+#define rtl_dm(rtlpriv)	(&((rtlpriv)->dm))
 /***************************************
     Bluetooth Co-existance Related
 ****************************************/

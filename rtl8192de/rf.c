@@ -389,7 +389,7 @@ bool rtl92d_phy_enable_anotherphy(struct ieee80211_hw *hw, bool bmac0)
 
 	rtlhal->during_mac0init_radiob = false;
 	rtlhal->during_mac1init_radioa = false;
-	RT_TRACE(COMP_RF, DBG_LOUD, ("===>\n"));
+	RT_TRACE(COMP_RF, DBG_LOUD, ("\n"));
 	/* MAC0 Need PHY1 load radio_b.txt . Driver use DBI to write. */
 	u1btmp = rtl_read_byte(rtlpriv, mac_reg);
 	if (!(u1btmp & mac_on_bit)) {
@@ -403,7 +403,7 @@ bool rtl92d_phy_enable_anotherphy(struct ieee80211_hw *hw, bool bmac0)
 		 * and radio_b.txt has been load. */
 		bresult = false;
 	}
-	RT_TRACE(COMP_RF, DBG_LOUD, ("<===\n"));
+	RT_TRACE(COMP_RF, DBG_LOUD, ("\n"));
 	return bresult;
 
 }
@@ -419,7 +419,7 @@ void rtl92d_phy_powerdown_anotherphy(struct ieee80211_hw *hw, bool bmac0)
 
 	rtlhal->during_mac0init_radiob = false;
 	rtlhal->during_mac1init_radioa = false;
-	RT_TRACE(COMP_RF, DBG_LOUD, ("====>\n"));
+	RT_TRACE(COMP_RF, DBG_LOUD, ("start\n"));
 	/* check MAC0 enable or not again now, if
 	 * enabled, not power down radio A. */
 	u1btmp = rtl_read_byte(rtlpriv, mac_reg);
@@ -429,7 +429,7 @@ void rtl92d_phy_powerdown_anotherphy(struct ieee80211_hw *hw, bool bmac0)
 		rtl92de_write_dword_dbi(hw,	RFPGA0_XA_LSSIPARAMETER,
 					0x00000000, direct);
 	}
-	RT_TRACE(COMP_RF, DBG_LOUD, ("<====\n"));
+	RT_TRACE(COMP_RF, DBG_LOUD, (" end\n"));
 }
 
 bool rtl92d_phy_rf6052_config(struct ieee80211_hw *hw)
@@ -580,7 +580,7 @@ bool rtl92d_phy_rf6052_config(struct ieee80211_hw *hw)
 		rtl92d_phy_powerdown_anotherphy(hw, false);
 	else if (need_pwrdown_radiob)
 		rtl92d_phy_powerdown_anotherphy(hw, true);
-	RT_TRACE(COMP_INIT, DBG_TRACE, ("<---\n"));
+	RT_TRACE(COMP_INIT, DBG_TRACE, ("\n"));
 	return rtstatus;
 
 phy_rf_cfg_fail:

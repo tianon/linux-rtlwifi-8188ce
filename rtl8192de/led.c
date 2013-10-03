@@ -50,21 +50,21 @@ void rtl92ce_sw_led_on(struct ieee80211_hw *hw, struct rtl_led *pled)
 		break;
 	case LED_PIN_LED0:
 		ledcfg = rtl_read_byte(rtlpriv, REG_LEDCFG2);
-		
+
 		if ((rtlpriv->efuse.eeprom_did == 0x8176) ||
 			(rtlpriv->efuse.eeprom_did == 0x8193))
-			/* BIT7 of REG_LEDCFG2 should be set to 
+			/* BIT7 of REG_LEDCFG2 should be set to
 			 * make sure we could emit the led2. */
 			rtl_write_byte(rtlpriv, REG_LEDCFG2, (ledcfg & 0xf0) | BIT(7) |
 					BIT(5) | BIT(6));
 		else
 			rtl_write_byte(rtlpriv, REG_LEDCFG2, (ledcfg & 0xf0) | BIT(7) |
-					BIT(5));		
+					BIT(5));
 		break;
 	case LED_PIN_LED1:
 		ledcfg = rtl_read_byte(rtlpriv, REG_LEDCFG1);
 
-		rtl_write_byte(rtlpriv, REG_LEDCFG2, (ledcfg & 0x0f) | BIT(5));		
+		rtl_write_byte(rtlpriv, REG_LEDCFG2, (ledcfg & 0x0f) | BIT(5));
 		break;
 	default:
 		RT_TRACE(COMP_ERR, DBG_EMERG,

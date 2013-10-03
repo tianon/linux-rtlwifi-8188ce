@@ -112,8 +112,16 @@ err_free:
 	return NETDEV_TX_OK;
 }
 #else
-/*<delete in kernel end>*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))
 static void rtl_op_tx(struct ieee80211_hw *hw, struct sk_buff *skb)
+#else
+/*<delete in kernel end>*/
+static void rtl_op_tx(struct ieee80211_hw *hw,
+		      struct ieee80211_tx_control *control,
+		      struct sk_buff *skb)
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_hal *rtlhal = rtl_hal(rtl_priv(hw));
@@ -127,9 +135,17 @@ static void rtl_op_tx(struct ieee80211_hw *hw, struct sk_buff *skb)
 	if (!test_bit(RTL_STATUS_INTERFACE_START, &rtlpriv->status))
 		goto err_free;
 
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))
 	if (!rtlpriv->intf_ops->waitq_insert(hw, skb))
 		rtlpriv->intf_ops->adapter_tx(hw, skb, &tcb_desc);
-
+#else
+/*<delete in kernel end>*/
+	if (!rtlpriv->intf_ops->waitq_insert(hw, control->sta, skb))
+	        rtlpriv->intf_ops->adapter_tx(hw, control->sta, skb, &tcb_desc);
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
 	return;
 
 err_free:
@@ -156,7 +172,18 @@ static int rtl_op_add_interface(struct ieee80211_hw *hw,
 	rtl_ips_nic_on(hw);
 
 	mutex_lock(&rtlpriv->locks.conf_mutex);
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
+	switch (ieee80211_vif_type_p2p(vif)) {	
+	case NL80211_IFTYPE_P2P_CLIENT:
+		mac->p2p = P2P_ROLE_CLIENT;
+		/*fall through*/
+#else
+/*<delete in kernel end>*/
 	switch (vif->type) {
+/*<delete in kernel start>*/	
+#endif
+/*<delete in kernel end>*/
 	case NL80211_IFTYPE_STATION:
 		if (mac->beacon_enabled == 1) {
 			RT_TRACE(COMP_MAC80211, DBG_LOUD,
@@ -181,6 +208,13 @@ static int rtl_op_add_interface(struct ieee80211_hw *hw,
 				(u8 *) (&mac->basic_rates));
 
 		break;
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
+	case NL80211_IFTYPE_P2P_GO:
+		mac->p2p = P2P_ROLE_GO;
+		/*fall through*/
+#endif
+/*<delete in kernel end>*/
 	case NL80211_IFTYPE_AP:
 		RT_TRACE(COMP_MAC80211, DBG_LOUD,
 			 ("NL80211_IFTYPE_AP \n"));
@@ -219,6 +253,13 @@ static int rtl_op_add_interface(struct ieee80211_hw *hw,
 		goto out;
 #endif
 
+	if (mac->p2p) {
+		RT_TRACE(COMP_MAC80211, DBG_LOUD,
+			 ("p2p role %x \n",vif->type));		
+		mac->basic_rates = 0xff0;/*disable cck rate for p2p*/
+		rtlpriv->cfg->ops->set_hw_reg(hw, HW_VAR_BASIC_RATE,
+				(u8 *) (&mac->basic_rates));		
+	}
 	mac->vif = vif;
 	mac->opmode = vif->type;
 	rtlpriv->cfg->ops->set_network_type(hw, vif->type);
@@ -254,6 +295,7 @@ static void rtl_op_remove_interface(struct ieee80211_hw *hw,
 	 *Note: We assume NL80211_IFTYPE_UNSPECIFIED as
 	 *NO LINK for our hardware.
 	 */
+	mac->p2p = 0; 
 	mac->vif = NULL;
 	mac->link_state = MAC80211_NOLINK;
 	memset(mac->bssid, 0, 6);
@@ -263,7 +305,27 @@ static void rtl_op_remove_interface(struct ieee80211_hw *hw,
 
 	mutex_unlock(&rtlpriv->locks.conf_mutex);
 }
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
+/*<delete in kernel end>*/	
+static int rtl_op_change_interface(struct ieee80211_hw *hw,
+				      struct ieee80211_vif *vif,
+				      enum nl80211_iftype new_type, bool p2p)
+{
+	struct rtl_priv *rtlpriv = rtl_priv(hw);
+	int ret;
+	rtl_op_remove_interface(hw, vif);
 
+	vif->type = new_type;
+	vif->p2p = p2p;
+	ret = rtl_op_add_interface(hw, vif);
+	RT_TRACE(COMP_MAC80211, DBG_LOUD,
+		 (" p2p  %x\n",p2p));
+	return ret;
+}
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/	
 static int rtl_op_config(struct ieee80211_hw *hw, u32 changed)
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
@@ -271,8 +333,11 @@ static int rtl_op_config(struct ieee80211_hw *hw, u32 changed)
 	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
 	struct rtl_ps_ctl *ppsc = rtl_psc(rtl_priv(hw));
 	struct ieee80211_conf *conf = &hw->conf;
-
-	mutex_lock(&rtlpriv->locks.conf_mutex);
+	
+	if (mac->skip_scan)
+		return 1;
+	
+	mutex_lock(&rtlpriv->locks.conf_mutex);	
 	if (changed & IEEE80211_CONF_CHANGE_LISTEN_INTERVAL) {	/* BIT(2) */
 		RT_TRACE(COMP_MAC80211, DBG_LOUD,
 			 ("IEEE80211_CONF_CHANGE_LISTEN_INTERVAL\n"));
@@ -328,6 +393,9 @@ static int rtl_op_config(struct ieee80211_hw *hw, u32 changed)
 	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
 		struct ieee80211_channel *channel = hw->conf.channel;
 		u8 wide_chan = (u8) channel->hw_value;
+
+		if (mac->act_scanning)
+			mac->n_channels++;
 
 		if (rtlpriv->dm.supp_phymode_switch &&
 			mac->link_state < MAC80211_LINKED &&
@@ -494,6 +562,7 @@ static int rtl_op_sta_add(struct ieee80211_hw *hw,
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_hal *rtlhal= rtl_hal(rtl_priv(hw));
+	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));	
 	struct rtl_sta_info *sta_entry;
 
 	if (sta) {
@@ -518,12 +587,16 @@ static int rtl_op_sta_add(struct ieee80211_hw *hw,
 			if (vif->type == NL80211_IFTYPE_ADHOC)
 				sta_entry->wireless_mode = WIRELESS_MODE_A;
 		}
-
-
+		/*disable cck rate for p2p*/
+		if (mac->p2p)
+			sta->supp_rates[0] &= 0xfffffff0;
+		
+		memcpy(sta_entry->mac_addr, sta->addr, ETH_ALEN);
 		RT_TRACE(COMP_MAC80211, DBG_DMESG,
 			("Add sta addr is %pM\n",sta->addr));
 		rtlpriv->cfg->ops->update_rate_tbl(hw, sta, 0);
 	}
+
 	return 0;
 }
 
@@ -693,7 +766,8 @@ static void rtl_op_bss_info_changed(struct ieee80211_hw *hw,
 		} else {
 			if (mac->link_state == MAC80211_LINKED)
 				rtl_lps_leave(hw);
-
+			if (ppsc->p2p_ps_info.p2p_ps_mode> P2P_PS_NONE)
+				rtl_p2p_ps_cmd(hw, P2P_PS_DISABLE);
 			mac->link_state = MAC80211_NOLINK;
 			memset(mac->bssid, 0, 6);
 			mac->vendor = PEER_UNKNOWN;
@@ -976,12 +1050,17 @@ static void rtl_op_sw_scan_start(struct ieee80211_hw *hw)
 	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
 
 	RT_TRACE(COMP_MAC80211, DBG_LOUD, ("\n"));
+	mac->act_scanning = true;
+	if (rtlpriv->link_info.b_higher_busytraffic) {
+		mac->skip_scan = true;
+		return;	
+	}
+	
 	if (rtlpriv->dm.supp_phymode_switch) {
 		if (rtlpriv->cfg->ops->check_switch_to_dmdp)
 			rtlpriv->cfg->ops->check_switch_to_dmdp(hw);
 	}
-	mac->act_scanning = true;
-
+	
 	if (mac->link_state == MAC80211_LINKED) {
 		rtl_lps_leave(hw);
 		mac->link_state = MAC80211_LINKED_SCANNING;
@@ -1003,6 +1082,17 @@ static void rtl_op_sw_scan_complete(struct ieee80211_hw *hw)
 
 	RT_TRACE(COMP_MAC80211, DBG_LOUD, ("\n"));
 	mac->act_scanning = false;
+	mac->skip_scan = false;
+	if (rtlpriv->link_info.b_higher_busytraffic) {
+		return;	
+	}
+
+	/*p2p will use 1/6/11 to scan */
+	if (mac->n_channels == 3)
+		mac->p2p_in_use = true;
+	else
+		mac->p2p_in_use = false;
+	mac->n_channels = 0;
 	/* Dul mac */
 	rtlpriv->rtlhal.b_load_imrandiqk_setting_for2g = false;
 
@@ -1300,6 +1390,13 @@ const struct ieee80211_ops rtl_ops = {
 	.tx = rtl_op_tx,
 	.add_interface = rtl_op_add_interface,
 	.remove_interface = rtl_op_remove_interface,
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37))
+/*<delete in kernel end>*/	
+	.change_interface = rtl_op_change_interface,
+/*<delete in kernel start>*/	
+#endif
+/*<delete in kernel end>*/
 	.config = rtl_op_config,
 	.configure_filter = rtl_op_configure_filter,
 	.set_key = rtl_op_set_key,

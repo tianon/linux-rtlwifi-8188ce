@@ -131,15 +131,15 @@ int rtl8723e_init_sw_vars(struct ieee80211_hw *hw)
 		   PHIMR_VIDOK |
 		   PHIMR_BEDOK |
 		   PHIMR_BKDOK |
-		   PHIMR_MGNTDOK | 
-		   PHIMR_HIGHDOK | 
+		   PHIMR_MGNTDOK |
+		   PHIMR_HIGHDOK |
 		   PHIMR_C2HCMD |
 		   PHIMR_HISRE_IND |
 		   PHIMR_TSF_BIT32_TOGGLE |
 		   PHIMR_TXBCNOK |
 		   PHIMR_PSTIMEOUT |
 		   0);
-	
+
 	rtlpci->irq_mask[1]	=
 		 (u32)(	PHIMR_RXFOVW |
 				0);
@@ -258,7 +258,7 @@ struct rtl_hal_ops rtl8723e_hal_ops = {
 
 struct rtl_mod_params rtl8723e_mod_params = {
 	.sw_crypto = false,
-	.b_inactiveps = true, 
+	.b_inactiveps = true,
 	.b_swctrl_lps = false,
 	.b_fwctrl_lps = true,
 };
@@ -327,7 +327,7 @@ struct rtl_hal_cfg rtl8723e_hal_cfg = {
 	.maps[RTL_IMR_ATIMEND] = PHIMR_ATIMEND_E,
 	.maps[RTL_IMR_BDOK] = PHIMR_BCNDOK0,
 	.maps[RTL_IMR_MGNTDOK] = PHIMR_MGNTDOK,
-	.maps[RTL_IMR_TBDER] = PHIMR_TXBCNERR, 
+	.maps[RTL_IMR_TBDER] = PHIMR_TXBCNERR,
 	.maps[RTL_IMR_HIGHDOK] = PHIMR_HIGHDOK,
 	.maps[RTL_IMR_TBDOK] = PHIMR_TXBCNOK,
 	.maps[RTL_IMR_BKDOK] = PHIMR_BKDOK,

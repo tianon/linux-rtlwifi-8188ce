@@ -1,10 +1,11 @@
-Release Date: 2012-05-09, ver 0006
+Release Date: 2013-02-07, ver 0010
 Realtek Linux mac80211 based driver:
    --This driver supports follwing RealTek PCIE Wireless LAN NICs:
 	RTL8188CE/RTL8192CE
 	RTL8191SE/RTL8192SE
 	RTL8192DE
 	RTL8723AE
+	RTL8188EE
 
    --This driver supports follwing Linux OS:
  	Fedora Core
@@ -37,7 +38,8 @@ The driver is composed of several parts:
 	   2.2 rtl8192se
 	   2.2 rtl8192de
 	   2.2 rtl8723ae
-	
+	   2.2 rtl8188ee
+	 
 	3. Script to build the modules
 	   3.1 Makefile 
 
@@ -86,12 +88,14 @@ you should use the following commands to Compile, Installation, or uninstall the
 
 	2. install compat-wireless driver
 	   ./compat/script/compat-install.sh
+	   or bash compat/script/compat-install.sh		
 		 
 	3. reboot
 	   reboot
 
 	4. uninstall driver
 	   ./compat/script/compat-uninstall.sh
+	   or bash compat/script/compat-uninstall.sh
 
 	5. you can get more information form follwing webset for how to use compat-wireless:
 	   http://wireless.kernel.org/en/users/Download/stable
@@ -216,6 +220,7 @@ the follwing method:
 				VIII. WPAPSK/WPA2PSK (For OS without UI) 
 ========================================================================================
 Wpa_supplicant helps you to link with WPA/WPA2(include WPA Enterprise) AP, 
+
 in Linux with NetworkManger & UI, UI will help you to link with AP, 
 But if there is no UI & Networkmanger in your Linux, you can use 
 follwing method to link with WPA/WPA2 AP. 

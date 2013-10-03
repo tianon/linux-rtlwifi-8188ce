@@ -148,7 +148,7 @@ static int _rtl92de_rate_mapping(struct ieee80211_hw *hw,
 			}
 		}
 	} else {
-		switch(desc_rate) {			
+		switch(desc_rate) {
 		case DESC92D_RATEMCS0:
 			rate_idx = 0;
 			break;
@@ -197,7 +197,7 @@ static int _rtl92de_rate_mapping(struct ieee80211_hw *hw,
 		case DESC92D_RATEMCS15:
 			rate_idx = 15;
 			break;
-		default:							
+		default:
 			rate_idx = 0;
 			break;
 		}
@@ -467,17 +467,35 @@ static void _rtl92de_insert_emcontent(struct rtl_tcb_desc *ptcb_desc,
 	SET_EARLYMODE_LEN4(virtualaddress, ptcb_desc->empkt_len[4]);
 }
 
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))
+void rtl92de_tx_fill_desc(struct ieee80211_hw *hw,
+			  struct ieee80211_hdr *hdr,
+			  u8 * pdesc_tx, struct ieee80211_tx_info *info,
+			  struct sk_buff *skb, u8 hw_queue,
+			  struct rtl_tcb_desc *ptcb_desc)
+#else
+/*<delete in kernel end>*/
 void rtl92de_tx_fill_desc(struct ieee80211_hw *hw,
 			  struct ieee80211_hdr *hdr, u8 *pdesc_tx,
-			  struct ieee80211_tx_info *info, struct sk_buff *skb,
+			  struct ieee80211_tx_info *info,
+			  struct ieee80211_sta *sta,
+			  struct sk_buff *skb,
 			  u8 hw_queue, struct rtl_tcb_desc *ptcb_desc)
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
 	struct rtl_pci *rtlpci = rtl_pcidev(rtl_pcipriv(hw));
 	struct rtl_hal *rtlhal = rtl_hal(rtlpriv);
 	struct rtl_ps_ctl *ppsc = rtl_psc(rtl_priv(hw));
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))
 	struct ieee80211_sta *sta = info->control.sta;
+#endif
+/*<delete in kernel end>*/
 	u8 *pdesc = (u8 *) pdesc_tx;
 	u16 seq_number;
 	u16 fc = le16_to_cpu(hdr->frame_control);
@@ -501,20 +519,25 @@ void rtl92de_tx_fill_desc(struct ieee80211_hw *hw,
 	seq_number = (le16_to_cpu(hdr->seq_ctrl) & IEEE80211_SCTL_SEQ) >> 4;
 	rtl_get_tcb_desc(hw, info, sta, skb, ptcb_desc);
 	/* reserve 8 byte for AMPDU early mode */
-	if (rtlhal->b_earlymode_eanble) {
+	if (rtlhal->b_earlymode_enable) {
 		skb_push(skb, EM_HDR_LEN);
 		memset(skb->data, 0, EM_HDR_LEN);
 	}
 	buf_len = skb->len;
 	mapping = pci_map_single(rtlpci->pdev, skb->data, skb->len,
 				 PCI_DMA_TODEVICE);
+	if (pci_dma_mapping_error(rtlpci->pdev, mapping)) {
+		RT_TRACE(COMP_SEND, DBG_TRACE,
+			 ("DMA mapping error"));
+		return;
+	}
 	CLEAR_PCI_TX_DESC_CONTENT(pdesc, sizeof(struct tx_desc_92d));
 	if (ieee80211_is_nullfunc(fc) || ieee80211_is_ctl(fc)) {
 		b_firstseg = true;
 		b_lastseg = true;
 	}
 	if (b_firstseg) {
-		if (rtlhal->b_earlymode_eanble) {
+		if (rtlhal->b_earlymode_enable) {
 			SET_TX_DESC_PKT_OFFSET(pdesc, 1);
 			SET_TX_DESC_OFFSET(pdesc, USB_HWDESC_HEADER_LEN + EM_HDR_LEN);
 			if (ptcb_desc->empkt_num) {
@@ -681,6 +704,11 @@ void rtl92de_tx_fill_cmddesc(struct ieee80211_hw *hw,
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)(skb->data);
 	u16 fc = le16_to_cpu(hdr->frame_control);
 
+	if (pci_dma_mapping_error(rtlpci->pdev, mapping)) {
+		RT_TRACE(COMP_SEND, DBG_TRACE,
+			 ("DMA mapping error"));
+		return;
+	}
 	CLEAR_PCI_TX_DESC_CONTENT(pdesc, TX_DESC_SIZE);
 	if (b_firstseg)
 		SET_TX_DESC_OFFSET(pdesc, USB_HWDESC_HEADER_LEN);

@@ -319,7 +319,7 @@ void rtl92s_phy_set_bw_mode(struct ieee80211_hw *hw,
 
 	rtl92s_phy_rf6052_set_bandwidth(hw, rtlphy->current_chan_bw);
 	rtlphy->set_bwmode_inprogress = false;
-	RT_TRACE(COMP_SCAN, DBG_TRACE, ("<== \n"));
+	RT_TRACE(COMP_SCAN, DBG_TRACE, (" \n"));
 }
 
 static bool _rtl92s_phy_set_sw_chnl_cmdarray(struct swchnlcmd *cmdtable,
@@ -483,7 +483,7 @@ u8 rtl92s_phy_sw_chnl(struct ieee80211_hw *hw)
 
 	rtlphy->sw_chnl_inprogress = false;
 
-	RT_TRACE(COMP_SCAN, DBG_TRACE, ("<==\n"));
+	RT_TRACE(COMP_SCAN, DBG_TRACE, ("\n"));
 
 	return 1;
 }
@@ -1404,7 +1404,7 @@ bool rtl92s_phy_set_fw_cmd(struct ieee80211_hw *hw, enum fwcmd_iotype fw_cmdio)
 				break;
 			}
 		}
-		
+
 		/* If firmware version is v.62 or later,
 		 * use FW_CMD_IO_SET for FW_CMD_CTRL_DM_BY_DRIVER */
 		if (hal_get_firmwareverison(rtlpriv) >= 0x3E) {

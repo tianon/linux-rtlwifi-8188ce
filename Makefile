@@ -33,10 +33,13 @@ all:
 	@make -C rtl8192de/
 	@cp $(SYMBOL_FILE) rtl8723e/
 	@make -C rtl8723e/
+	@cp $(SYMBOL_FILE) rtl8188ee/
+	@make -C rtl8188ee/
 install: all
 	find /lib/modules/$(shell uname -r) -name "r8192se_*.ko" -exec rm {} \;
 	find /lib/modules/$(shell uname -r) -name "r8192ce_*.ko" -exec rm {} \;
 	find /lib/modules/$(shell uname -r) -name "r8723e_*.ko" -exec rm {} \;
+	find /lib/modules/$(shell uname -r) -name "r8188ee_*.ko" -exec rm {} \;
 	@rm -fr $(FIRMWAREDIR)/`uname -r`/rtlwifi
 
 	$(shell rm -fr $(MODDESTDIR))
@@ -45,12 +48,13 @@ install: all
 	$(shell mkdir $(MODDESTDIR)/rtl8192ce)
 	$(shell mkdir $(MODDESTDIR)/rtl8192de)
 	$(shell mkdir $(MODDESTDIR)/rtl8723e)
+	$(shell mkdir $(MODDESTDIR)/rtl8188ee)
 	@install -p -m 644 rtlwifi.ko $(MODDESTDIR)	
 	@install -p -m 644 ./rtl8192se/rtl8192se.ko $(MODDESTDIR)/rtl8192se
 	@install -p -m 644 ./rtl8192ce/rtl8192ce.ko $(MODDESTDIR)/rtl8192ce
 	@install -p -m 644 ./rtl8192de/rtl8192de.ko $(MODDESTDIR)/rtl8192de
 	@install -p -m 644 ./rtl8723e/rtl8723e.ko $(MODDESTDIR)/rtl8723e
-
+	@install -p -m 644 ./rtl8188ee/rtl8188ee.ko $(MODDESTDIR)/rtl8188ee
 	
 	@depmod -a
 
@@ -82,3 +86,4 @@ clean:
 	@make -C rtl8192se/ clean
 	@make -C rtl8192de/ clean
 	@make -C rtl8723e/ clean
+	@make -C rtl8188ee/ clean

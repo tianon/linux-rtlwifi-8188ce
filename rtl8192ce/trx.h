@@ -700,6 +700,13 @@ struct rx_desc_92c {
 void rtl92ce_tx_fill_desc(struct ieee80211_hw *hw,
 			  struct ieee80211_hdr *hdr,
 			  u8 * pdesc, struct ieee80211_tx_info *info,
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,7,0))
+/*<delete in kernel end>*/
+			  struct ieee80211_sta *sta,
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
 			  struct sk_buff *skb, u8 hw_queue,
 			  struct rtl_tcb_desc *ptcb_desc);
 bool rtl92ce_rx_query_desc(struct ieee80211_hw *hw,

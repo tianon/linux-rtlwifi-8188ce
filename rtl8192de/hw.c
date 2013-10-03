@@ -447,6 +447,10 @@ void rtl92de_set_hw_reg(struct ieee80211_hw *hw, u8 variable, u8 *val)
 			rtl92d_set_fw_joinbss_report_cmd(hw, (*(u8 *) val));
 			break;
 		}
+	case HW_VAR_H2C_FW_P2P_PS_OFFLOAD:{
+		rtl92d_set_p2p_ps_offload_cmd(hw,(*(u8 *) val));
+		break;
+	}
 	case HW_VAR_AID: {
 			u16 u2btmp;
 			u2btmp = rtl_read_word(rtlpriv, REG_BCN_PSR_RPT);
@@ -508,6 +512,40 @@ void rtl92de_set_hw_reg(struct ieee80211_hw *hw, u8 variable, u8 *val)
 				rtlpriv->dm.bdisable_tx_int = bdisable_ac_int;
 			}
 			break;
+		}
+	case HW_VAR_FW_LPS_ACTION:{
+			bool b_enter_fwlps = *((bool *) val);
+			u8 rpwm_val, fw_pwrmode;
+			bool b_fw_current_inps;
+
+			if (b_enter_fwlps) {
+					rpwm_val = 0x02;	/* RF off */
+					b_fw_current_inps = true;
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_FW_PSMODE_STATUS,
+							(u8 *) (&b_fw_current_inps));
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_H2C_FW_PWRMODE,
+							(u8 *) (&ppsc->fwctrl_psmode));
+
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_SET_RPWM,
+							(u8 *) (&rpwm_val));
+			} else {
+					rpwm_val = 0x0C;	/* RF on */
+					fw_pwrmode = FW_PS_ACTIVE_MODE;
+					b_fw_current_inps = false;
+					rtlpriv->cfg->ops->set_hw_reg(hw, HW_VAR_SET_RPWM,
+							(u8 *) (&rpwm_val));
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_H2C_FW_PWRMODE,
+							(u8 *) (&fw_pwrmode));
+
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_FW_PSMODE_STATUS,
+							(u8 *) (&b_fw_current_inps));
+			}
+			 break;
 		}
 	default: {
 			RT_TRACE(COMP_ERR, DBG_EMERG, ("switch case "
@@ -960,7 +998,7 @@ int rtl92de_hw_init(struct ieee80211_hw *hw)
 	tmp_u1b = tmp_u1b | 0x30;
 	rtl_write_byte(rtlpriv, 0x605, tmp_u1b);
 
-	if (rtlhal->b_earlymode_eanble) {
+	if (rtlhal->b_earlymode_enable) {
 		RT_TRACE(COMP_INIT, DBG_LOUD, ("EarlyMode Enabled!!!\n"));
 
 		tmp_u1b = rtl_read_byte(rtlpriv, 0x4d0);
@@ -1108,7 +1146,7 @@ static enum version_8192d _rtl92de_read_chip_version(struct ieee80211_hw *hw)
 
 	value32 = rtl_read_dword(rtlpriv, REG_SYS_CFG);
 	version |= CHIP_92D;
-	
+
 	if (!(value32 & 0x000f0000)) {
 		version = VERSION_TEST_CHIP_92D_SINGLEPHY;
 		RT_TRACE(COMP_INIT, DBG_DMESG, ("TEST CHIP!!!\n"));
@@ -1375,7 +1413,7 @@ static void _rtl92de_poweroff_adapter(struct ieee80211_hw *hw)
 		spin_unlock_irqrestore(&globalmutex_for_poweron_and_poweroff, flags);
 	}
 
-	RT_TRACE(COMP_INIT, DBG_LOUD, ("<=======\n"));
+	RT_TRACE(COMP_INIT, DBG_LOUD, (" end\n"));
 }
 
 void rtl92de_card_disable(struct ieee80211_hw *hw)
@@ -1436,7 +1474,7 @@ void rtl92de_card_disable(struct ieee80211_hw *hw)
 	rtl_write_byte(rtlpriv, REG_PCIE_CTRL_REG + 1, 0xff);
 	udelay(50);
 	rtl_write_byte(rtlpriv, REG_CR, 0x0);
-	RT_TRACE(COMP_INIT, DBG_LOUD,("==> Do power off.......\n"));
+	RT_TRACE(COMP_INIT, DBG_LOUD,(" Do power off.......\n"));
 	if (rtl92d_phy_check_poweroff(hw))
 		_rtl92de_poweroff_adapter(hw);
 	return;
@@ -1813,7 +1851,7 @@ static void _rtl92de_read_macphymode_and_bandtype(struct ieee80211_hw *hw, u8 *c
 	unsigned long flags = 0;
 	/* must true here, used for two macs */
 	static bool glb_firstconfig = true;
-	
+
 	if (rtlpriv->dm.supp_phymode_switch) {
 		spin_lock_irqsave(&rtlpriv->glb_var->glb_list_lock, flags);
 		if (glb_firstconfig) {
@@ -2416,9 +2454,9 @@ void rtl92de_allow_all_destaddr(struct ieee80211_hw *hw,
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_pci *rtlpci = rtl_pcidev(rtl_pcipriv(hw));
-	
+
 	if (allow_all_da) {/* Set BIT0 */
-		rtlpci->receive_config |= RCR_AAP;	
+		rtlpci->receive_config |= RCR_AAP;
 	} else {/* Clear BIT0 */
 		rtlpci->receive_config &= ~RCR_AAP;
 	}
@@ -2426,8 +2464,8 @@ void rtl92de_allow_all_destaddr(struct ieee80211_hw *hw,
 	if(write_into_reg) {
 		rtl_write_dword(rtlpriv, REG_RCR, rtlpci->receive_config);
 	}
-	
-	RT_TRACE(COMP_TURBO | COMP_INIT, DBG_LOUD,   
+
+	RT_TRACE(COMP_TURBO | COMP_INIT, DBG_LOUD,
 		("receive_config=0x%08X, write_into_reg=%d\n",
 		rtlpci->receive_config, write_into_reg ));
 }

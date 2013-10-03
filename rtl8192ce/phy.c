@@ -364,7 +364,6 @@ static bool _rtl92c_phy_bb8192c_config_parafile(struct ieee80211_hw *hw)
 	struct rtl_efuse *rtlefuse = rtl_efuse(rtl_priv(hw));
 	bool rtstatus;
 
-	RT_TRACE(COMP_INIT, DBG_TRACE, ("==>\n"));
 	rtstatus = _rtl92c_phy_config_bb_with_headerfile(hw,
 							 BASEBAND_CONFIG_PHY_REG);
 	if (rtstatus != true) {
@@ -930,7 +929,7 @@ static void _rtl92c_get_txpower_index(struct ieee80211_hw *hw, u8 channel,
 	struct rtl_phy *rtlphy = &(rtlpriv->phy);
 	struct rtl_efuse *rtlefuse = rtl_efuse(rtl_priv(hw));
 	u8 index = (channel - 1);
-	
+
 	cckpowerlevel[RF90_PATH_A] =
 	    rtlefuse->txpwrlevel_cck[RF90_PATH_A][index];
 	cckpowerlevel[RF90_PATH_B] =
@@ -1158,7 +1157,6 @@ void rtl92c_phy_set_bw_mode_callback(struct ieee80211_hw *hw)
 	}
 	rtl92c_phy_rf6052_set_bandwidth(hw, rtlphy->current_chan_bw);
 	rtlphy->set_bwmode_inprogress = false;
-	RT_TRACE(COMP_SCAN, DBG_TRACE, ("<== \n"));
 }
 
 void rtl92c_phy_set_bw_mode(struct ieee80211_hw *hw,
@@ -1208,7 +1206,7 @@ void rtl92c_phy_sw_chnl_callback(struct ieee80211_hw *hw)
 		}
 		break;
 	} while (true);
-	RT_TRACE(COMP_SCAN, DBG_TRACE, ("<==\n"));
+	RT_TRACE(COMP_SCAN, DBG_TRACE, ("\n"));
 }
 
 u8 rtl92c_phy_sw_chnl(struct ieee80211_hw *hw)
@@ -2417,7 +2415,7 @@ bool rtl92c_phy_set_io_cmd(struct ieee80211_hw *hw, enum io_type iotype)
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_phy *rtlphy = &(rtlpriv->phy);
 	bool b_postprocessing = false;
-	
+
 	RT_TRACE(COMP_CMD, DBG_TRACE,
 		 ("-->IO Cmd(%#x), set_io_inprogress(%d)\n",
 		  iotype, rtlphy->set_io_inprogress));
@@ -2446,7 +2444,7 @@ bool rtl92c_phy_set_io_cmd(struct ieee80211_hw *hw, enum io_type iotype)
 		return false;
 	}
 	rtl92c_phy_set_io(hw);
-	RT_TRACE(COMP_CMD, DBG_TRACE, ("<--IO Type(%#x)\n", iotype));
+	RT_TRACE(COMP_CMD, DBG_TRACE, ("IO Type(%#x)\n", iotype));
 	return true;
 }
 
@@ -2476,7 +2474,7 @@ static void rtl92c_phy_set_io(struct ieee80211_hw *hw)
 	}
 	rtlphy->set_io_inprogress = false;
 	RT_TRACE(COMP_CMD, DBG_TRACE,
-		 ("<---(%#x)\n", rtlphy->current_io_type));
+		 ("(%#x)\n", rtlphy->current_io_type));
 }
 
 static void rtl92ce_phy_set_rf_on(struct ieee80211_hw *hw)

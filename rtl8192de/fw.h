@@ -128,8 +128,10 @@ enum rtl8192d_h2c_cmd {
 	H2C_RSVDPAGE = 3,
 	H2C_RSSI_REPORT = 5,
 	H2C_RA_MASK = 6,
+	H2C_P2P_PS_OFFLOAD = 8,
 	H2C_MAC_MODE_SEL = 9,
 	H2C_PWRM = 15,
+	H2C_P2P_PS_CTW_CMD = 24,
 	MAX_H2CCMD
 };
 
@@ -140,5 +142,5 @@ void rtl92d_firmware_selfreset(struct ieee80211_hw *hw);
 void rtl92d_set_fw_pwrmode_cmd(struct ieee80211_hw *hw, u8 mode);
 void rtl92d_set_fw_rsvdpagepkt(struct ieee80211_hw *hw, bool b_dl_finished);
 void rtl92d_set_fw_joinbss_report_cmd(struct ieee80211_hw *hw, u8 mstatus);
-
+void rtl92d_set_p2p_ps_offload_cmd(struct ieee80211_hw *hw, u8 p2p_ps_state);
 #endif

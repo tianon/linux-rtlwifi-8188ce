@@ -393,6 +393,40 @@ void rtl92se_set_hw_reg(struct ieee80211_hw *hw, u8 variable, u8 * val)
 
 			break;
 		}
+	case HW_VAR_FW_LPS_ACTION:{
+			bool b_enter_fwlps = *((bool *) val);
+			u8 rpwm_val, fw_pwrmode;
+			bool b_fw_current_inps;
+
+			if (b_enter_fwlps) {
+					rpwm_val = 0x02;	/* RF off */
+					b_fw_current_inps = true;
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_FW_PSMODE_STATUS,
+							(u8 *) (&b_fw_current_inps));
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_H2C_FW_PWRMODE,
+							(u8 *) (&ppsc->fwctrl_psmode));
+
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_SET_RPWM,
+							(u8 *) (&rpwm_val));
+			} else {
+					rpwm_val = 0x0C;	/* RF on */
+					fw_pwrmode = FW_PS_ACTIVE_MODE;
+					b_fw_current_inps = false;
+					rtlpriv->cfg->ops->set_hw_reg(hw, HW_VAR_SET_RPWM,
+							(u8 *) (&rpwm_val));
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_H2C_FW_PWRMODE,
+							(u8 *) (&fw_pwrmode));
+
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_FW_PSMODE_STATUS,
+							(u8 *) (&b_fw_current_inps));
+			}
+			 break;
+		}
 	default:
 		RT_TRACE(COMP_ERR, DBG_EMERG, ("switch case not process \n"));
 		break;
@@ -958,7 +992,7 @@ int rtl92se_hw_init(struct ieee80211_hw *hw)
 		RT_TRACE(COMP_ERR, DBG_EMERG, ("MAC Config failed\n"));
 		return rtstatus;
 	}
-	
+
 	/* because last function modify RCR, so we update
 	 * rcr var here, or TP will unstable for receive_config
 	 * is wrong, RX RCR_ACRC32 will cause TP unstabel & Rx
@@ -966,7 +1000,7 @@ int rtl92se_hw_init(struct ieee80211_hw *hw)
 	rtlpci->receive_config = rtl_read_dword(rtlpriv, RCR);
 	rtlpci->receive_config &= ~(RCR_ACRC32 | RCR_AICV);
 	rtl_write_dword(rtlpriv, RCR, rtlpci->receive_config);
-	
+
 	/* Make sure BB/RF write OK. We should prevent enter IPS. radio off. */
 	/* We must set flag avoid BB/RF config period later!! */
 	rtl_write_dword(rtlpriv, CMDR, 0x37FC);
@@ -2070,14 +2104,14 @@ static void rtl92se_update_hal_rate_table(struct ieee80211_hw *hw,
 		 ("%x\n", rtl_read_dword(rtlpriv, ARFR0)));
 }
 
-static void rtl92se_update_hal_rate_mask(struct ieee80211_hw *hw, 
+static void rtl92se_update_hal_rate_mask(struct ieee80211_hw *hw,
 		struct ieee80211_sta *sta, u8 rssi_level)
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_phy *rtlphy = &(rtlpriv->phy);
 	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
 	struct rtl_hal *rtlhal = rtl_hal(rtl_priv(hw));
-	struct rtl_sta_info * sta_entry = NULL; 
+	struct rtl_sta_info * sta_entry = NULL;
 	u32 ratr_bitmap;
 	u8 ratr_index = 0;
 	u8 b_curtxbw_40mhz = (sta->ht_cap.cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40)
@@ -2227,15 +2261,15 @@ static void rtl92se_update_hal_rate_mask(struct ieee80211_hw *hw,
 	rtl_write_dword(rtlpriv, WFM5, (FW_RA_UPDATE_MASK | (mask << 8)));
 }
 
-void rtl92se_update_hal_rate_tbl(struct ieee80211_hw *hw, 
+void rtl92se_update_hal_rate_tbl(struct ieee80211_hw *hw,
 		struct ieee80211_sta *sta, u8 rssi_level)
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
-	
+
 	if (rtlpriv->dm.b_useramask)
 		rtl92se_update_hal_rate_mask(hw, sta, rssi_level);
 	else
-		rtl92se_update_hal_rate_table(hw, sta);		
+		rtl92se_update_hal_rate_table(hw, sta);
 }
 
 void rtl92se_update_channel_access_setting(struct ieee80211_hw *hw)
@@ -2414,7 +2448,7 @@ void rtl92se_set_key(struct ieee80211_hw *hw,	u32 key_index, u8* p_macaddr,
 				} else {
 					entry_id = CAM_PAIRWISE_KEY_POSITION;
 				}
-				
+
 				key_index = PAIRWISE_KEYIDX;
 				is_pairwise = true;
 			}
@@ -2477,9 +2511,9 @@ void rtl92se_allow_all_destaddr(struct ieee80211_hw *hw,
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_pci *rtlpci = rtl_pcidev(rtl_pcipriv(hw));
-	
+
 	if (allow_all_da) {/* Set BIT0 */
-		rtlpci->receive_config |= RCR_AAP;	
+		rtlpci->receive_config |= RCR_AAP;
 	} else {/* Clear BIT0 */
 		rtlpci->receive_config &= ~RCR_AAP;
 	}
@@ -2487,7 +2521,7 @@ void rtl92se_allow_all_destaddr(struct ieee80211_hw *hw,
 	if(write_into_reg) {
 		rtl_write_dword(rtlpriv, RCR, rtlpci->receive_config);
 	}
-	
+
 	RT_TRACE(COMP_TURBO | COMP_INIT, DBG_LOUD,
 		("receive_config=0x%08X, write_into_reg=%d\n",
 		rtlpci->receive_config, write_into_reg ) );

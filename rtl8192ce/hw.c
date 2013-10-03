@@ -317,7 +317,7 @@ void rtl92ce_set_hw_reg(struct ieee80211_hw *hw, u8 variable, u8 *val)
 	case HW_VAR_AC_PARAM:{
 			u8 e_aci = *((u8 *) val);
 			rtl92c_dm_init_edca_turbo(hw);
-			
+
 			if (rtlpci->acm_method != eAcmWay2_SW)
 				rtlpriv->cfg->ops->set_hw_reg(hw,
 							      HW_VAR_ACM_CTRL,
@@ -475,6 +475,11 @@ void rtl92ce_set_hw_reg(struct ieee80211_hw *hw, u8 variable, u8 *val)
 
 			break;
 		}
+	case HW_VAR_H2C_FW_P2P_PS_OFFLOAD:{
+		rtl92c_set_p2p_ps_offload_cmd(hw,(*(u8 *) val));
+		break;
+	}
+
 	case HW_VAR_AID:{
 			u16 u2btmp;
 			u2btmp = rtl_read_word(rtlpriv, REG_BCN_PSR_RPT);
@@ -504,6 +509,40 @@ void rtl92ce_set_hw_reg(struct ieee80211_hw *hw, u8 variable, u8 *val)
 
 			break;
 
+		}
+	case HW_VAR_FW_LPS_ACTION:{
+			bool b_enter_fwlps = *((bool *) val);
+			u8 rpwm_val, fw_pwrmode;
+			bool b_fw_current_inps;
+
+			if (b_enter_fwlps) {
+					rpwm_val = 0x02;	/* RF off */
+					b_fw_current_inps = true;
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_FW_PSMODE_STATUS,
+							(u8 *) (&b_fw_current_inps));
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_H2C_FW_PWRMODE,
+							(u8 *) (&ppsc->fwctrl_psmode));
+
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_SET_RPWM,
+							(u8 *) (&rpwm_val));
+			} else {
+					rpwm_val = 0x0C;	/* RF on */
+					fw_pwrmode = FW_PS_ACTIVE_MODE;
+					b_fw_current_inps = false;
+					rtlpriv->cfg->ops->set_hw_reg(hw, HW_VAR_SET_RPWM,
+							(u8 *) (&rpwm_val));
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_H2C_FW_PWRMODE,
+							(u8 *) (&fw_pwrmode));
+
+					rtlpriv->cfg->ops->set_hw_reg(hw,
+							HW_VAR_FW_PSMODE_STATUS,
+							(u8 *) (&b_fw_current_inps));
+			}
+			 break;
 		}
 	default:
 		RT_TRACE(COMP_ERR, DBG_EMERG, ("switch case "
@@ -936,7 +975,7 @@ int rtl92ce_hw_init(struct ieee80211_hw *hw)
 	rtlpci->receive_config = rtl_read_dword(rtlpriv, REG_RCR);
 	rtlpci->receive_config &= ~(RCR_ACRC32 | RCR_AICV);
 	rtl_write_dword(rtlpriv, REG_RCR, rtlpci->receive_config);
-	
+
 	rtl92c_phy_bb_config(hw);
 	rtlphy->rf_mode = RF_OP_BY_SW_3WIRE;
 	rtl92c_phy_rf_config(hw);
@@ -961,7 +1000,7 @@ int rtl92ce_hw_init(struct ieee80211_hw *hw)
 	_rtl92ce_hw_configure(hw);
 	rtl_cam_reset_all_entry(hw);
 	rtl92ce_enable_hw_security_config(hw);
-	
+
 	ppsc->rfpwr_state = ERFON;
 
 	rtlpriv->cfg->ops->set_hw_reg(hw, HW_VAR_ETHER_ADDR, mac->mac_addr);
@@ -1021,7 +1060,7 @@ static enum version_8192c _rtl92ce_read_chip_version(struct ieee80211_hw *hw)
 		    VERSION_A_CHIP_88C;
 	} else {
 		version = (enum version_8192c) NORMAL_CHIP;
-		version = (enum version_8192c) (version | 
+		version = (enum version_8192c) (version |
 				((value32 & TYPE_ID) ? CHIP_92C_BITMASK : 0));
 		version = (enum version_8192c) (version |
 				((value32 & VENDOR_ID) ? CHIP_VENDOR_UMC : 0));
@@ -1066,7 +1105,7 @@ static enum version_8192c _rtl92ce_read_chip_version(struct ieee80211_hw *hw)
 	case VERSION_NORMAL_UMC_CHIP_88C_A_CUT:
 		RT_TRACE(COMP_INIT, DBG_TRACE,
 			 ("Chip Version ID: VERSION_NORMAL_UMC_CHIP_88C_A_CUT.\n"));
-		break;			
+		break;
 	case VERSION_NORMAL_UMC_CHIP_92C_1T2R_B_CUT:
 		RT_TRACE(COMP_INIT, DBG_TRACE,
 			 ("Chip Version ID: VERSION_NORMAL_UMC_CHIP_92C_1T2R_B_CUT.\n"));
@@ -1708,7 +1747,7 @@ static void _rtl92ce_read_adapter_info(struct ieee80211_hw *hw)
 
 	/* set channel paln to world wide 13 */
 	rtlefuse->channel_plan = COUNTRY_CODE_WORLD_WIDE_13;
-	
+
 	if (rtlhal->oem_id == RT_CID_DEFAULT) {
 		switch (rtlefuse->eeprom_oemid) {
 		case EEPROM_CID_DEFAULT:
@@ -1892,14 +1931,14 @@ static void rtl92ce_update_hal_rate_table(struct ieee80211_hw *hw,
 		 ("%x\n", rtl_read_dword(rtlpriv, REG_ARFR0)));
 }
 
-static void rtl92ce_update_hal_rate_mask(struct ieee80211_hw *hw, 
+static void rtl92ce_update_hal_rate_mask(struct ieee80211_hw *hw,
 		struct ieee80211_sta *sta, u8 rssi_level)
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_phy *rtlphy = &(rtlpriv->phy);
 	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
 	struct rtl_hal *rtlhal = rtl_hal(rtl_priv(hw));
-	struct rtl_sta_info * sta_entry = NULL; 
+	struct rtl_sta_info * sta_entry = NULL;
 	u32 ratr_bitmap;
 	u8 ratr_index;
 	u8 b_curtxbw_40mhz = (sta->ht_cap.cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40)
@@ -2035,15 +2074,15 @@ static void rtl92ce_update_hal_rate_mask(struct ieee80211_hw *hw,
 	rtl92c_fill_h2c_cmd(hw, H2C_RA_MASK, 5, rate_mask);
 }
 
-void rtl92ce_update_hal_rate_tbl(struct ieee80211_hw *hw, 
+void rtl92ce_update_hal_rate_tbl(struct ieee80211_hw *hw,
 		struct ieee80211_sta *sta, u8 rssi_level)
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
-	
+
 	if (rtlpriv->dm.b_useramask)
 		rtl92ce_update_hal_rate_mask(hw, sta, rssi_level);
 	else
-		rtl92ce_update_hal_rate_table(hw, sta);		
+		rtl92ce_update_hal_rate_table(hw, sta);
 }
 
 void rtl92ce_update_channel_access_setting(struct ieee80211_hw *hw)
@@ -2206,7 +2245,7 @@ void rtl92ce_set_key(struct ieee80211_hw *hw, u32 key_index,
 				} else {
 					entry_id = CAM_PAIRWISE_KEY_POSITION;
 				}
-				
+
 				key_index = PAIRWISE_KEYIDX;
 				is_pairwise = true;
 			}
@@ -2385,9 +2424,9 @@ void rtl92ce_allow_all_destaddr(struct ieee80211_hw *hw,
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_pci *rtlpci = rtl_pcidev(rtl_pcipriv(hw));
-	
+
 	if (allow_all_da) {/* Set BIT0 */
-		rtlpci->receive_config |= RCR_AAP;	
+		rtlpci->receive_config |= RCR_AAP;
 	} else {/* Clear BIT0 */
 		rtlpci->receive_config &= ~RCR_AAP;
 	}
@@ -2395,7 +2434,7 @@ void rtl92ce_allow_all_destaddr(struct ieee80211_hw *hw,
 	if(write_into_reg) {
 		rtl_write_dword(rtlpriv, REG_RCR, rtlpci->receive_config);
 	}
-	
+
 	RT_TRACE(COMP_TURBO | COMP_INIT, DBG_LOUD,
 		("receive_config=0x%08X, write_into_reg=%d\n",
 		rtlpci->receive_config, write_into_reg ));

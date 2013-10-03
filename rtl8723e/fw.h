@@ -66,7 +66,11 @@ enum rtl8192c_h2c_cmd {
 	H2C_JOINBSSRPT = 2,
 	H2C_RSVDPAGE = 3,
 	H2C_RSSI_REPORT = 5,
+	/*p2p cmd :Not defined now*/
+	H2C_P2P_PS_CTW_CMD,
+	H2C_P2P_PS_OFFLOAD,
 	H2C_RA_MASK = 6,
+
 	MAX_H2CCMD
 };
 
@@ -94,5 +98,5 @@ void rtl8723e_firmware_selfreset(struct ieee80211_hw *hw);
 void rtl8723e_set_fw_pwrmode_cmd(struct ieee80211_hw *hw, u8 mode);
 void rtl8723e_set_fw_rsvdpagepkt(struct ieee80211_hw *hw, bool b_dl_finished);
 void rtl8723e_set_fw_joinbss_report_cmd(struct ieee80211_hw *hw, u8 mstatus);
-
+void rtl8723e_set_p2p_ps_offload_cmd(struct ieee80211_hw *hw, u8 p2p_ps_state);
 #endif

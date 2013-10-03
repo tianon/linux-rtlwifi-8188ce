@@ -197,12 +197,12 @@ int rtl92s_init_sw_vars(struct ieee80211_hw *hw)
 		release_firmware(firmware);
 		return 1;
 	}
-	
+
 	pfirmware = (struct rt_firmware *)rtlpriv->rtlhal.pfirmware;
 	memcpy(pfirmware->sz_fw_tmpbuffer, firmware->data, firmware->size);
 	pfirmware->sz_fw_tmpbufferlen = firmware->size;
 	release_firmware(firmware);
-	
+
 	return err;
 }
 

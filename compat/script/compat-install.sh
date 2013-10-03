@@ -1,6 +1,6 @@
 #!/bin/bash
 
-compat_wireless_version="3.0-2"
+compat_wireless_version="3.2.5-1"
 
 tar jxvf compat-wireless-${compat_wireless_version}.tar.bz2
 
@@ -19,6 +19,7 @@ cp *.c $driver_fold -fr
 cp *.h $driver_fold -fr
 
 cp firmware/rtlwifi /lib/firmware -fr
+cp rtl8188ee $driver_fold -fr
 cp rtl8192se $driver_fold -fr
 cp rtl8192ce $driver_fold -fr
 cp rtl8192de $driver_fold -fr
@@ -26,8 +27,8 @@ cp rtl8723e  $driver_fold -fr
 #cp compat $driver_fold -fr
 
 #replace LINUX_VERSION_CODE with compat-wireless kernel version for all the files of the directory "rtlwifi"
-find $driver_fold -name '*.h' -print0 |xargs -0 sed -i 's/LINUX_VERSION_CODE/(KERNEL_VERSION(2,6,39))/g'
-find $driver_fold -name '*.c' -print0 |xargs -0 sed -i 's/LINUX_VERSION_CODE/(KERNEL_VERSION(2,6,39))/g'
+find $driver_fold -name '*.h' -print0 |xargs -0 sed -i 's/LINUX_VERSION_CODE/(KERNEL_VERSION(3,2,5))/g'
+find $driver_fold -name '*.c' -print0 |xargs -0 sed -i 's/LINUX_VERSION_CODE/(KERNEL_VERSION(3,2,5))/g'
 
 #replace the corresponding files with the files in compat/${compat_wireless_version} 
 cd compat/${compat_wireless_version}

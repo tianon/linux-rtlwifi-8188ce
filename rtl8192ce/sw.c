@@ -155,7 +155,7 @@ int rtl92c_init_sw_vars(struct ieee80211_hw *hw)
 			 ("Can't alloc buffer for fw.\n"));
 		return 1;
 	}
-	
+
 	if (IS_VENDOR_UMC_A_CUT(rtlhal->version) && !IS_92C_SERIAL(rtlhal->version))
 		fw_name = "rtlwifi/rtl8192cfwU.bin";
 	else if (IS_81xxC_VENDOR_UMC_B_CUT(rtlhal->version))
@@ -178,7 +178,7 @@ int rtl92c_init_sw_vars(struct ieee80211_hw *hw)
 	memcpy(rtlpriv->rtlhal.pfirmware, firmware->data, firmware->size);
 	rtlpriv->rtlhal.fwsize = firmware->size;
 	release_firmware(firmware);
-	
+
 	return err;
 }
 

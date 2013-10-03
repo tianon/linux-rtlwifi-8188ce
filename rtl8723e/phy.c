@@ -333,23 +333,23 @@ bool rtl8723e_phy_bb_config(struct ieee80211_hw *hw)
 	tmpu1b = rtl_read_byte(rtlpriv, REG_AFE_PLL_CTRL);
 	udelay(2);
 	rtl_write_byte(rtlpriv, REG_AFE_PLL_CTRL, (tmpu1b|BIT(1)));
-	udelay(2);	
+	udelay(2);
 	//2. 0x29[7:0] = 0xFF
 	rtl_write_byte(rtlpriv, REG_AFE_PLL_CTRL+1, 0xff);
 	udelay(2);
-		
+
 	//3. 0x02[1:0] = 2b'11
 	tmpu1b = rtl_read_byte(rtlpriv, REG_SYS_FUNC_EN);
 	rtl_write_byte(rtlpriv, REG_SYS_FUNC_EN, (tmpu1b|FEN_BB_GLB_RSTn|FEN_BBRSTB));
-		
+
 	//4. 0x25[6] = 0
 	tmpu1b = rtl_read_byte(rtlpriv, REG_AFE_XTAL_CTRL+1);
 	rtl_write_byte(rtlpriv, REG_AFE_XTAL_CTRL+1, (tmpu1b&(~BIT(6))));
-		
+
 	//5. 0x24[20] = 0 	//Advised by SD3 Alex Wang. 2011.02.09.
 	tmpu1b = rtl_read_byte(rtlpriv, REG_AFE_XTAL_CTRL+2);
 	rtl_write_byte(rtlpriv, REG_AFE_XTAL_CTRL+2, (tmpu1b&(~BIT(4))));
-		
+
 	//6. 0x1f[7:0] = 0x07
 	rtl_write_byte(rtlpriv, REG_RF_CTRL, 0x07);
 
@@ -370,14 +370,14 @@ static bool _rtl8723e_phy_bb8192c_config_parafile(struct ieee80211_hw *hw)
 	struct rtl_efuse *rtlefuse = rtl_efuse(rtl_priv(hw));
 	bool rtstatus;
 
-	RT_TRACE(COMP_INIT, DBG_TRACE, ("==>\n"));
+	RT_TRACE(COMP_INIT, DBG_TRACE, ("\n"));
 	rtstatus = _rtl8723e_phy_config_bb_with_headerfile(hw,
 							 BASEBAND_CONFIG_PHY_REG);
 	if (rtstatus != true) {
 		RT_TRACE(COMP_ERR, DBG_EMERG, ("Write BB Reg Fail!!"));
 		return false;
 	}
-	
+
 	if (rtlphy->rf_type == RF_1T2R) {
 		_rtl8723e_phy_bb_config_1t(hw);
 		RT_TRACE(COMP_INIT, DBG_TRACE, ("Config to 1T!!\n"));
@@ -414,7 +414,7 @@ static bool _rtl8723e_phy_config_mac_with_headerfile(struct ieee80211_hw *hw)
 	RT_TRACE(COMP_INIT, DBG_TRACE, ("Read Rtl723MACPHY_Array\n"));
 	arraylength = RTL8723E_MACARRAYLENGTH;
 	ptrarray = RTL8723EMAC_ARRAY;
-	
+
 	RT_TRACE(COMP_INIT, DBG_TRACE,
 		 ("Img:RTL8192CEMAC_2T_ARRAY\n"));
 	for (i = 0; i < arraylength; i = i + 2)
@@ -681,7 +681,7 @@ bool rtl8723e_phy_config_rf_with_headerfile(struct ieee80211_hw * hw,
 	radioa_array_table = RTL8723E_RADIOA_1TARRAY;
 	radiob_arraylen = RTL8723E_RADIOB_1TARRAYLENGTH;
 	radiob_array_table = RTL8723E_RADIOB_1TARRAY;
-	
+
 	rtstatus = true;
 
 	switch (rfpath) {
@@ -896,7 +896,7 @@ static void _rtl8723e_get_txpower_index(struct ieee80211_hw *hw, u8 channel,
 	struct rtl_phy *rtlphy = &(rtlpriv->phy);
 	struct rtl_efuse *rtlefuse = rtl_efuse(rtl_priv(hw));
 	u8 index = (channel - 1);
-	
+
 	cckpowerlevel[RF90_PATH_A] =
 	    rtlefuse->txpwrlevel_cck[RF90_PATH_A][index];
 	cckpowerlevel[RF90_PATH_B] =
@@ -1124,7 +1124,7 @@ void rtl8723e_phy_set_bw_mode_callback(struct ieee80211_hw *hw)
 	}
 	rtl8723e_phy_rf6052_set_bandwidth(hw, rtlphy->current_chan_bw);
 	rtlphy->set_bwmode_inprogress = false;
-	RT_TRACE(COMP_SCAN, DBG_TRACE, ("<== \n"));
+	RT_TRACE(COMP_SCAN, DBG_TRACE, (" \n"));
 }
 
 void rtl8723e_phy_set_bw_mode(struct ieee80211_hw *hw,
@@ -1174,7 +1174,7 @@ void rtl8723e_phy_sw_chnl_callback(struct ieee80211_hw *hw)
 		}
 		break;
 	} while (true);
-	RT_TRACE(COMP_SCAN, DBG_TRACE, ("<==\n"));
+	RT_TRACE(COMP_SCAN, DBG_TRACE, ("\n"));
 }
 
 u8 rtl8723e_phy_sw_chnl(struct ieee80211_hw *hw)
@@ -2352,7 +2352,7 @@ bool rtl8723e_phy_set_io_cmd(struct ieee80211_hw *hw, enum io_type iotype)
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_phy *rtlphy = &(rtlpriv->phy);
 	bool b_postprocessing = false;
-	
+
 	RT_TRACE(COMP_CMD, DBG_TRACE,
 		 ("-->IO Cmd(%#x), set_io_inprogress(%d)\n",
 		  iotype, rtlphy->set_io_inprogress));
@@ -2381,7 +2381,7 @@ bool rtl8723e_phy_set_io_cmd(struct ieee80211_hw *hw, enum io_type iotype)
 		return false;
 	}
 	rtl8723e_phy_set_io(hw);
-	RT_TRACE(COMP_CMD, DBG_TRACE, ("<--IO Type(%#x)\n", iotype));
+	RT_TRACE(COMP_CMD, DBG_TRACE, ("IO Type(%#x)\n", iotype));
 	return true;
 }
 
@@ -2411,7 +2411,7 @@ static void rtl8723e_phy_set_io(struct ieee80211_hw *hw)
 	}
 	rtlphy->set_io_inprogress = false;
 	RT_TRACE(COMP_CMD, DBG_TRACE,
-		 ("<---(%#x)\n", rtlphy->current_io_type));
+		 ("(%#x)\n", rtlphy->current_io_type));
 }
 
 static void rtl8723e_phy_set_rf_on(struct ieee80211_hw *hw)

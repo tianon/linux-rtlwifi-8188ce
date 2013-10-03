@@ -151,7 +151,7 @@ static int _rtl92se_rate_mapping(struct ieee80211_hw *hw,
 			}
 		}
 	} else {
-		switch(desc_rate) {			
+		switch(desc_rate) {
 		case DESC92S_RATEMCS0:
 			rate_idx = 0;
 			break;
@@ -200,7 +200,7 @@ static int _rtl92se_rate_mapping(struct ieee80211_hw *hw,
 		case DESC92S_RATEMCS15:
 			rate_idx = 15;
 			break;
-		default:							
+		default:
 			rate_idx = 0;
 			break;
 		}
@@ -426,9 +426,9 @@ bool rtl92se_rx_query_desc(struct ieee80211_hw *hw, struct rtl_stats *status,
 
 	status->b_is_cck = RX_HAL_IS_CCK_RATE(status->rate);
 
-	if (status->b_hwerror) 
-		return false;	
-	
+	if (status->b_hwerror)
+		return false;
+
 	rx_status->freq = hw->conf.channel->center_freq;
 	rx_status->band = hw->conf.channel->band;
 
@@ -478,16 +478,30 @@ bool rtl92se_rx_query_desc(struct ieee80211_hw *hw, struct rtl_stats *status,
 	return true;
 }
 
-void rtl92se_tx_fill_desc(struct ieee80211_hw *hw,
-		struct ieee80211_hdr *hdr, u8 *pdesc_tx,
-		struct ieee80211_tx_info *info, struct sk_buff *skb,
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))
+void rtl92se_tx_fill_desc(struct ieee80211_hw *hw, struct ieee80211_hdr *hdr,
+	u8 *pdesc_tx, struct ieee80211_tx_info *info, struct sk_buff* skb,
 		u8 hw_queue, struct rtl_tcb_desc *ptcb_desc)
+#else
+void rtl92se_tx_fill_desc(struct ieee80211_hw *hw, struct ieee80211_hdr *hdr,
+			  u8 *pdesc_tx, struct ieee80211_tx_info *info,
+			  struct ieee80211_sta *sta,
+			  struct sk_buff *skb, u8 hw_queue,
+			  struct rtl_tcb_desc *ptcb_desc)
+/*<delete in kernel start>*/
+#endif
+/*<delete in kernel end>*/
 {
 	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
 	struct rtl_pci *rtlpci = rtl_pcidev(rtl_pcipriv(hw));
 	struct rtl_hal *rtlhal = rtl_hal(rtl_priv(hw));
+/*<delete in kernel start>*/
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,7,0))
 	struct ieee80211_sta *sta = info->control.sta;
+#endif
+/*<delete in kernel end>*/
 	u8 *pdesc = (u8 *) pdesc_tx;
 	u16 seq_number;
 	u16 fc = le16_to_cpu(hdr->frame_control);
@@ -500,6 +514,11 @@ void rtl92se_tx_fill_desc(struct ieee80211_hw *hw,
 		    PCI_DMA_TODEVICE);
 	u8 bw_40 = 0;
 
+	if (pci_dma_mapping_error(rtlpci->pdev, mapping)) {
+		RT_TRACE(COMP_SEND, DBG_TRACE,
+			 ("DMA mapping error"));
+		return;
+	}
 	if (mac->opmode == NL80211_IFTYPE_STATION) {
 		bw_40 = mac->bw_40;
 	} else if (mac->opmode == NL80211_IFTYPE_AP ||
@@ -676,6 +695,7 @@ void rtl92se_tx_fill_desc(struct ieee80211_hw *hw,
 void rtl92se_tx_fill_cmddesc(struct ieee80211_hw *hw, u8 *pdesc,
 	bool b_firstseg, bool b_lastseg, struct sk_buff *skb)
 {
+	struct rtl_priv *rtlpriv = rtl_priv(hw);
 	struct rtl_pci *rtlpci = rtl_pcidev(rtl_pcipriv(hw));
 	struct rtl_hal *rtlhal = rtl_hal(rtl_priv(hw));
 	struct rtl_tcb_desc *tcb_desc = (struct rtl_tcb_desc *)(skb->cb);
@@ -683,6 +703,11 @@ void rtl92se_tx_fill_cmddesc(struct ieee80211_hw *hw, u8 *pdesc,
 	dma_addr_t mapping = pci_map_single(rtlpci->pdev, skb->data, skb->len,
 			PCI_DMA_TODEVICE);
 
+	if (pci_dma_mapping_error(rtlpci->pdev, mapping)) {
+		RT_TRACE(COMP_SEND, DBG_TRACE,
+			 ("DMA mapping error"));
+		return;
+	}
     /* Clear all status	*/
 	CLEAR_PCI_TX_DESC_CONTENT(pdesc, TX_CMDDESC_SIZE_RTL8192S);
 

@@ -136,7 +136,7 @@ u8 rtl_cam_add_one_entry(struct ieee80211_hw *hw, u8 *mac_addr,
 
 	if (ul_key_id == TOTAL_CAM_ENTRY) {
 		RT_TRACE(COMP_ERR, DBG_WARNING,
-			 ("<=== ulKeyId exceed!\n"));
+			 ("ulKeyId exceed!\n"));
 		return 0;
 	}
 
@@ -149,7 +149,7 @@ u8 rtl_cam_add_one_entry(struct ieee80211_hw *hw, u8 *mac_addr,
 	rtl_cam_program_entry(hw, ul_entry_idx, mac_addr,
 			      (u8 *) key_content, us_config);
 
-	RT_TRACE(COMP_SEC, DBG_DMESG, ("<===\n"));
+	RT_TRACE(COMP_SEC, DBG_DMESG, ("end \n"));
 
 	return 1;
 
